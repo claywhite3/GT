@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Scandit v8 module resolution (must precede any module script). -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@scandit/web-datacapture-core": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8/build/js/index.js",
+        "@scandit/web-datacapture-barcode": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8/build/js/index.js",
+        "@scandit/web-datacapture-core/": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-core@8/",
+        "@scandit/web-datacapture-barcode/": "https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8/"
+      }
+    }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="manifest.json">
@@ -79,6 +90,25 @@
         <a href="scan_camera.html" class="btn-back-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
         <button class="btn-next disabled" id="nextBtn" onclick="goNext()">Classify <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
+
+    <div class="alldone-area">
+        <button class="btn-alldone" onclick="openDoneConfirm()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            All Done with This Camera
+        </button>
+    </div>
+</div>
+
+<div class="done-overlay" id="doneOverlay" onclick="if(event.target===this)closeDoneConfirm()">
+    <div class="done-dialog">
+        <div class="done-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <div class="done-title">All done with this camera?</div>
+        <div class="done-text">No issue will be recorded for this scan. This takes you back to scan the next camera.</div>
+        <div class="done-actions">
+            <button class="done-cancel" onclick="closeDoneConfirm()">Not yet</button>
+            <button class="done-ok" onclick="finishCamera()">OK, done</button>
+        </div>
+    </div>
 </div>
 
 <div class="manual-overlay" id="manualOverlay" onclick="if(event.target===this)ScanController.closeManual()">
@@ -95,8 +125,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="config.js"></script>
 <script src="app.js"></script>
-<script src="scanner.js"></script>
+<script type="module" src="scanner.js"></script>
 <script>
     Session.requireLogin();
     if (!Session.get('cameraBarcode')) { window.location.href = 'scan_camera.html'; }
@@ -124,6 +155,21 @@
     function goNext() {
         if (!Session.get('oosBarcode')) return;
         window.location.href = 'classify.html';
+    }
+
+    function openDoneConfirm() {
+        document.getElementById('doneOverlay').classList.add('open');
+    }
+    function closeDoneConfirm() {
+        document.getElementById('doneOverlay').classList.remove('open');
+    }
+    // Done with this camera — no issue recorded for this scan. Back to the camera page.
+    function finishCamera() {
+        try { if (ScanController && ScanController.stop) ScanController.stop(); } catch (e) {}
+        Session.del('oosBarcode');
+        Session.del('classification');
+        Session.del('cameraBarcode');
+        window.location.href = 'scan_camera.html';
     }
 </script>
 </body>

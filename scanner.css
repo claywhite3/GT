@@ -109,3 +109,21 @@ body { font-family: 'DM Sans', sans-serif; background-color: #F2F3F7; min-height
 .hint-card { margin: 14px 20px 0; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); animation: fadeUp 0.4s 0.18s ease both; }
 .hint-card img { width: 100%; height: auto; display: block; border-radius: 10px; }
 .hint-caption { font-size: 12px; font-weight: 600; color: #6B7280; text-align: center; margin-top: 8px; line-height: 1.4; }
+
+/* "All Done with This Camera" escape hatch on the OOS scan page */
+.alldone-area { padding: 0 20px 22px; animation: fadeUp 0.4s 0.3s ease both; }
+.btn-alldone { width: 100%; padding: 14px; background: #fff; color: #16A34A; border: 1.5px solid #BBF7D0; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.15s, background 0.15s; }
+.btn-alldone:active { transform: scale(0.985); background: #F0FDF4; }
+.btn-alldone svg { width: 17px; height: 17px; }
+
+.done-overlay { position: fixed; inset: 0; background: rgba(17,24,39,0.45); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity .2s; padding: 24px; }
+.done-overlay.open { opacity: 1; pointer-events: auto; }
+.done-dialog { width: 100%; max-width: 320px; background: #fff; border-radius: 22px; padding: 26px 22px 20px; text-align: center; transform: scale(.94); transition: transform .2s; }
+.done-overlay.open .done-dialog { transform: scale(1); }
+.done-icon { width: 56px; height: 56px; margin: 0 auto 14px; background: #F0FDF4; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.done-icon svg { width: 28px; height: 28px; color: #16A34A; }
+.done-title { font-size: 19px; font-weight: 800; color: #111827; }
+.done-text { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 6px; line-height: 1.5; }
+.done-actions { display: flex; gap: 10px; margin-top: 22px; }
+.done-cancel { flex: 1; padding: 14px; background: #F3F4F6; color: #374151; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; }
+.done-ok { flex: 1; padding: 14px; background: #16A34A; color: #fff; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(22,163,74,0.3); }
