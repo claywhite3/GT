@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <title>Captana — Choose Workflow</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'DM Sans', sans-serif; background: #F2F3F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; color: #111827; }
+        .shell { width: 100%; max-width: 390px; min-height: 100vh; background: #F2F3F7; display: flex; flex-direction: column; padding: 0 20px 28px; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px 0 8px; }
+        .back-btn { width: 38px; height: 38px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: none; cursor: pointer; text-decoration: none; }
+        .back-btn svg { width: 18px; height: 18px; color: #111827; }
+        .avatar { width: 40px; height: 40px; background: #2563EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+
+        .hero { padding: 12px 4px 0; margin-bottom: 26px; animation: fadeUp .4s ease both; }
+        .hero-title { font-size: 30px; font-weight: 800; color: #111827; line-height: 1.1; letter-spacing: -0.5px; }
+        .hero-sub { font-size: 15px; color: #6B7280; font-weight: 500; margin-top: 8px; }
+
+        .cards { display: flex; flex-direction: column; gap: 18px; }
+        .flow-card { display: flex; align-items: center; gap: 18px; background: #fff; border: none; border-radius: 24px; padding: 24px 22px; cursor: pointer; text-align: left; width: 100%;
+            box-shadow: 0 10px 30px rgba(17,24,39,0.12), 0 4px 10px rgba(17,24,39,0.06);
+            transition: transform .16s ease, box-shadow .16s ease; animation: fadeUp .45s ease both; }
+        .flow-card:active { transform: translateY(2px) scale(.99); box-shadow: 0 4px 14px rgba(17,24,39,0.12); }
+        .flow-card:nth-child(1) { animation-delay: .05s; }
+        .flow-card:nth-child(2) { animation-delay: .12s; }
+
+        .flow-icon { width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .flow-icon svg { width: 34px; height: 34px; }
+        .flow-icon.collect { background: #EFF3FF; }
+        .flow-icon.collect svg { color: #2563EB; }
+        .flow-icon.view { background: #ECFDF3; }
+        .flow-icon.view svg { color: #16A34A; }
+
+        .flow-text { flex: 1; }
+        .flow-name { font-size: 20px; font-weight: 800; color: #111827; line-height: 1.15; }
+        .flow-desc { font-size: 13.5px; font-weight: 500; color: #6B7280; margin-top: 4px; line-height: 1.45; }
+        .flow-chev { color: #C5CAD3; flex-shrink: 0; }
+        .flow-chev svg { width: 22px; height: 22px; }
+
+        .note { margin-top: 28px; font-size: 12px; color: #9CA3AF; text-align: center; font-weight: 500; }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="top-bar">
+        <a href="store_select.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <div class="avatar" id="avatarEl">GT</div>
+    </div>
+
+    <div class="hero">
+        <div class="hero-title">Captana<br>Ground Truth</div>
+        <div class="hero-sub">Choose a workflow to begin</div>
+    </div>
+
+    <div class="cards">
+        <button class="flow-card" onclick="goCollect()">
+            <div class="flow-icon collect">
+                <!-- viewfinder + plus: capturing new data -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                    <line x1="12" y1="9" x2="12" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/>
+                </svg>
+            </div>
+            <div class="flow-text">
+                <div class="flow-name">Collect Data</div>
+                <div class="flow-desc">Scan cameras and log out-of-shelf ground truth.</div>
+            </div>
+            <div class="flow-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+
+        <button class="flow-card" onclick="goView()">
+            <div class="flow-icon view">
+                <!-- bar chart: analyzing collected data -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="21" x2="21" y2="21"/>
+                    <rect x="5" y="11" width="3.5" height="7" rx="1"/>
+                    <rect x="10.25" y="6" width="3.5" height="12" rx="1"/>
+                    <rect x="15.5" y="14" width="3.5" height="4" rx="1"/>
+                </svg>
+            </div>
+            <div class="flow-text">
+                <div class="flow-name">View Data</div>
+                <div class="flow-desc">Explore and filter previously collected records.</div>
+            </div>
+            <div class="flow-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        </button>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    try { document.getElementById('avatarEl').textContent = Session.initials(); } catch (e) {}
+    function goCollect() { window.location.href = 'category.html'; }
+    function goView() { window.location.href = 'view_data.html'; }
+</script>
+</body>
+</html>

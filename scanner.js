@@ -16,7 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.18.1';
+  const SCANNER_VERSION = 'scanner v0.17.2';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -71,14 +71,8 @@ const ScanController = (function () {
 
   /* ---- shared lifecycle ------------------------------------------------- */
   async function init(options) {
-    options = options || {};
-    log(SCANNER_VERSION + ' init; onComplete=' + (typeof options.onComplete));
-    // Don't let a later arg-less init() wipe a good callback.
-    if (!options.onComplete && opts.onComplete) {
-      log('init called without onComplete; keeping existing one');
-      options.onComplete = opts.onComplete;
-    }
-    opts = options;
+    opts = options || {};
+    log(SCANNER_VERSION + ' loaded');
     if (opts.manualTitle) $('manualTitle').textContent = opts.manualTitle;
     if (opts.manualSub) $('manualSub').textContent = opts.manualSub;
     if (opts.manualPlaceholder) $('manualInput').placeholder = opts.manualPlaceholder;
@@ -133,7 +127,6 @@ const ScanController = (function () {
     const value = String(decodedText || '').trim();
     if (!value) { shake(); return; }
     scanCompleted = true;
-    log('handleSuccess: ' + value);
     complete(value);
   }
 
@@ -149,9 +142,8 @@ const ScanController = (function () {
   async function complete(value) {
     successSound.play().catch(() => {});
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    await stop();
 
-    // Update the UI and fire the callback FIRST, so the page's button enables
-    // even if camera teardown below is slow or throws.
     $('completeScreen').style.display = 'flex';
     $('rescanBtn').classList.remove('hidden');
     $('manualEntryBtn').classList.add('hidden');
@@ -163,19 +155,7 @@ const ScanController = (function () {
     const checkEl = $('completeCheck');
     if (checkEl) { checkEl.style.animation = 'none'; void checkEl.offsetWidth; checkEl.style.animation = ''; }
 
-    if (typeof opts.onComplete === 'function') {
-      log('firing onComplete for: ' + value);
-      try {
-        opts.onComplete(value);
-        const nb = document.getElementById('nextBtn');
-        log('nextBtn disabled now? ' + (nb ? nb.classList.contains('disabled') : 'no nextBtn'));
-      } catch (e) { log('onComplete error: ' + e); }
-    } else {
-      log('NO onComplete callback registered');
-    }
-
-    // Now tear the camera down (errors here no longer block the callback).
-    try { await stop(); } catch (e) { log('stop after complete failed: ' + e); }
+    if (typeof opts.onComplete === 'function') opts.onComplete(value);
   }
 
   /* ---- SCANDIT engine --------------------------------------------------- */
@@ -255,18 +235,10 @@ const ScanController = (function () {
     sdcBarcodeCapture = await BarcodeCapture.forContext(sdcContext, settings);
     sdcBarcodeCapture.addListener({
       didScan: (mode, session) => {
-        log('didScan fired');
-        let barcode = null;
-        try {
-          barcode = session.newlyRecognizedBarcode
-            || (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes[0])
-            || (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes.length
-                ? session.newlyRecognizedBarcodes[0] : null);
-        } catch (e) { log('barcode read error: ' + e); }
-        if (!barcode) { log('didScan: no barcode in session'); return; }
-        const data = (barcode.data != null ? barcode.data : (barcode.rawData || ''));
-        log('scanned: ' + data);
-        handleSuccess(String(data));
+        const barcode = session.newlyRecognizedBarcode ||
+          (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes[0]);
+        if (!barcode) return;
+        handleSuccess(barcode.data || '');
       },
     });
     await sdcBarcodeCapture.setEnabled(true);

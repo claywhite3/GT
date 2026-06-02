@@ -146,13 +146,11 @@
         if (!panel) return;
         panel.style.display = 'block';
         var keyLen = (window.SCANDIT_LICENSE_KEY || '').length;
-        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.18.0 · key length ' + keyLen + '\n';
+        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.17.2 · key length ' + keyLen + '\n';
+';
     })();
 
-    function startScanner() {
-        if (typeof ScanController === 'undefined' || !window.ScanController) {
-            return setTimeout(startScanner, 50);
-        }
+    window.addEventListener('load', () => {
         ScanController.init({
             onComplete: (value) => {
                 Session.set('oosBarcode', value);
@@ -162,8 +160,7 @@
             manualSub: 'Type the barcode for this out-of-shelf location.',
             manualPlaceholder: 'Barcode',
         });
-    }
-    startScanner();
+    });
 
     function goNext() {
         if (!Session.get('oosBarcode')) return;

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <title>Captana — View Data</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'DM Sans', sans-serif; background: #F2F3F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; color: #111827; }
+        .shell { width: 100%; max-width: 390px; min-height: 100vh; background: #F2F3F7; display: flex; flex-direction: column; padding: 0 16px 40px; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px 4px 8px; position: relative; }
+        .back-btn { width: 38px; height: 38px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: none; cursor: pointer; text-decoration: none; }
+        .back-btn svg { width: 18px; height: 18px; color: #111827; }
+        .home-btn { position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: none; cursor: pointer; text-decoration: none; }
+        .home-btn svg { width: 19px; height: 19px; color: #111827; }
+        .avatar { width: 40px; height: 40px; background: #2563EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+
+        .hero { padding: 10px 4px 0; margin-bottom: 14px; }
+        .hero-title { font-size: 26px; font-weight: 800; line-height: 1.15; }
+        .hero-sub { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 4px; }
+
+        .loading, .empty, .error { text-align: center; padding: 50px 20px; color: #6B7280; font-weight: 500; font-size: 14px; }
+        .error { color: #B91C1C; }
+        .spinner { width: 34px; height: 34px; border: 3px solid #E5E7EB; border-top-color: #2563EB; border-radius: 50%; margin: 0 auto 16px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Filters */
+        .filters { background: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); margin-bottom: 16px; }
+        .filter-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .filter-row:last-child { margin-bottom: 0; }
+        .filter-field { flex: 1; }
+        .filter-label { font-size: 10px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; display: block; }
+        .filter-field select, .filter-field input { width: 100%; padding: 9px 10px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: #111827; outline: none; }
+        .filter-field select:focus, .filter-field input:focus { border-color: #2563EB; }
+
+        .section-label { font-size: 12px; font-weight: 800; color: #6B7280; text-transform: uppercase; letter-spacing: .5px; margin: 18px 4px 10px; }
+
+        /* Headline cards */
+        .count-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .count-card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
+        .count-num { font-size: 26px; font-weight: 800; line-height: 1; }
+        .count-label { font-size: 12px; color: #6B7280; font-weight: 600; margin-top: 5px; }
+        .count-card.tp .count-num { color: #16A34A; }
+        .count-card.fn .count-num { color: #EA580C; }
+        .count-card.fp .count-num { color: #DB2777; }
+        .count-card.total .count-num { color: #2563EB; }
+
+        .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .metric-card { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
+        .metric-title { font-size: 12px; font-weight: 700; color: #374151; }
+        .metric-big { font-size: 30px; font-weight: 800; color: #111827; line-height: 1; margin-top: 8px; }
+        .metric-sub { font-size: 11.5px; color: #9CA3AF; font-weight: 600; margin-top: 6px; }
+        .metric-raw { font-size: 13px; color: #6B7280; font-weight: 700; margin-top: 2px; }
+
+        /* Tables */
+        .table-card { background: #fff; border-radius: 14px; padding: 6px 14px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
+        .trow { display: flex; align-items: center; padding: 11px 0; border-bottom: 1px solid #F1F2F5; font-size: 13px; }
+        .trow:last-child { border-bottom: none; }
+        .trow.head { font-size: 10px; font-weight: 800; color: #9CA3AF; text-transform: uppercase; letter-spacing: .4px; }
+        .trow.total { font-weight: 800; border-top: 2px solid #E5E7EB; }
+        .tname { flex: 1; font-weight: 600; color: #374151; }
+        .tnum { width: 42px; text-align: right; font-weight: 700; color: #111827; font-variant-numeric: tabular-nums; }
+        .tpct { width: 56px; text-align: right; font-weight: 800; color: #2563EB; font-variant-numeric: tabular-nums; }
+        .tpct.muted { color: #C5CAD3; }
+
+        .reason-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid #F1F2F5; }
+        .reason-row:last-child { border-bottom: none; }
+        .reason-name { flex: 1; font-size: 13px; font-weight: 600; color: #374151; line-height: 1.3; }
+        .reason-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; padding: 2px 6px; border-radius: 10px; flex-shrink: 0; }
+        .reason-tag.model { background: #DBEAFE; color: #1D4ED8; }
+        .reason-tag.operational { background: #FEF3C7; color: #B45309; }
+        .reason-count { width: 30px; text-align: right; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; }
+        .reason-bar-wrap { height: 6px; background: #F1F2F5; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .reason-bar { height: 100%; border-radius: 3px; }
+
+        .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .split-card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); text-align: center; }
+        .split-num { font-size: 24px; font-weight: 800; }
+        .split-num.model { color: #1D4ED8; }
+        .split-num.operational { color: #B45309; }
+        .split-label { font-size: 12px; font-weight: 700; color: #6B7280; margin-top: 4px; }
+        .split-pct { font-size: 11px; color: #9CA3AF; font-weight: 600; margin-top: 2px; }
+
+        .refresh-btn { margin: 10px auto 0; display: flex; align-items: center; gap: 6px; background: none; border: none; color: #2563EB; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .refresh-btn svg { width: 14px; height: 14px; }
+        .note-line { font-size: 11px; color: #9CA3AF; font-weight: 500; margin: 8px 4px 0; line-height: 1.4; }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="top-bar">
+        <a href="flow_picker.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <a href="flow_picker.html" class="home-btn" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/><path d="M9 21v-6h6v6"/></svg></a>
+        <div class="avatar" id="avatarEl">GT</div>
+    </div>
+
+    <div class="hero">
+        <div class="hero-title">View Data</div>
+        <div class="hero-sub">Recall &amp; precision from collected ground truth.</div>
+    </div>
+
+    <div id="content">
+        <div class="loading"><div class="spinner"></div>Loading records…</div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    Session.requireLogin();
+    try { document.getElementById('avatarEl').textContent = Session.initials(); } catch (e) {}
+
+    let ALL = [];   // all records
+    const F = { from: '', to: '', store: '', category: '', classification: '' };
+
+    function pct(n, d) { return d > 0 ? (n / d) : null; }
+    function fmtPct(v) { return v === null ? '—' : (v * 100).toFixed(1) + '%'; }
+
+    // Excel serial date (the sheet stores timestamps as ISO now, but older rows
+    // may be Excel serials) -> JS Date. Handles both.
+    function toDate(ts) {
+        if (!ts && ts !== 0) return null;
+        if (typeof ts === 'number' || /^\d+(\.\d+)?$/.test(String(ts))) {
+            const serial = Number(ts);
+            return new Date(Math.round((serial - 25569) * 86400 * 1000));
+        }
+        const d = new Date(ts);
+        return isNaN(d) ? null : d;
+    }
+
+    function applyFilters() {
+        return ALL.filter(r => {
+            if (F.store && r.storeAddress !== F.store) return false;
+            if (F.category && r.category !== F.category) return false;
+            if (F.classification && r.classification !== F.classification) return false;
+            if (F.from || F.to) {
+                const d = toDate(r.timestamp);
+                if (!d) return false;
+                if (F.from && d < new Date(F.from)) return false;
+                if (F.to) { const t = new Date(F.to); t.setHours(23,59,59); if (d > t) return false; }
+            }
+            return true;
+        });
+    }
+
+    function isModel(r) { return String(r.reasonType).toLowerCase() === 'model'; }
+    function isOps(r) { return String(r.reasonType).toLowerCase() === 'operational'; }
+
+    function compute(rows) {
+        const tp = rows.filter(r => r.classification === 'True Positive');
+        const fn = rows.filter(r => r.classification === 'False Negative');
+        const fp = rows.filter(r => r.classification === 'False Positive');
+        const fnModel = fn.filter(isModel), fnOps = fn.filter(isOps);
+        const fpModel = fp.filter(isModel), fpOps = fp.filter(isOps);
+
+        return {
+            tp: tp.length, fn: fn.length, fp: fp.length,
+            recallSlots: tp.length + fn.length,
+            // model-only: operational FN excluded from denominator
+            recallModel: pct(tp.length, tp.length + fnModel.length),
+            recallRaw: pct(tp.length, tp.length + fn.length),
+            precisionModel: pct(tp.length, tp.length + fpModel.length),
+            precisionRaw: pct(tp.length, tp.length + fp.length),
+            fnModel: fnModel.length, fnOps: fnOps.length,
+            fpModel: fpModel.length, fpOps: fpOps.length,
+            tpRows: tp, fnRows: fn, fpRows: fp,
+        };
+    }
+
+    function byCategory(rows) {
+        const cats = {};
+        rows.forEach(r => {
+            const c = r.category || 'Other';
+            if (!cats[c]) cats[c] = { tp:0, fnModel:0, fpModel:0 };
+            if (r.classification === 'True Positive') cats[c].tp++;
+            else if (r.classification === 'False Negative' && isModel(r)) cats[c].fnModel++;
+            else if (r.classification === 'False Positive' && isModel(r)) cats[c].fpModel++;
+        });
+        return cats;
+    }
+
+    function reasonBreakdown(rows, defs, cls) {
+        const subset = rows.filter(r => r.classification === cls);
+        const counts = {};
+        defs.forEach(d => counts[d.label] = 0);
+        subset.forEach(r => {
+            // rootCause may be "Reason — note"; match on the leading reason label.
+            const rc = String(r.rootCause || '');
+            const hit = defs.find(d => rc === d.label || rc.indexOf(d.label) === 0);
+            if (hit) counts[hit.label]++;
+        });
+        return { counts, total: subset.length };
+    }
+
+    function render() {
+        const rows = applyFilters();
+        const m = compute(rows);
+        const c = document.getElementById('content');
+
+        if (ALL.length === 0) {
+            c.innerHTML = '<div class="empty">No records yet. Collect some data first, then come back to see the analysis.</div>';
+            return;
+        }
+
+        const stores = Array.from(new Set(ALL.map(r => r.storeAddress).filter(Boolean))).sort();
+
+        let html = '';
+
+        // Filters
+        html += '<div class="filters">';
+        html += '<div class="filter-row">';
+        html += '<div class="filter-field"><label class="filter-label">From</label><input type="date" id="fFrom" value="'+F.from+'"></div>';
+        html += '<div class="filter-field"><label class="filter-label">To</label><input type="date" id="fTo" value="'+F.to+'"></div>';
+        html += '</div>';
+        html += '<div class="filter-row">';
+        html += '<div class="filter-field"><label class="filter-label">Category</label><select id="fCat"><option value="">All</option>'
+              + PRODUCT_CATEGORIES.map(x => '<option value="'+x+'"'+(F.category===x?' selected':'')+'>'+x+'</option>').join('') + '</select></div>';
+        html += '<div class="filter-field"><label class="filter-label">Result</label><select id="fCls"><option value="">All</option>'
+              + ['True Positive','False Negative','False Positive'].map(x => '<option value="'+x+'"'+(F.classification===x?' selected':'')+'>'+x+'</option>').join('') + '</select></div>';
+        html += '</div>';
+        if (stores.length > 1) {
+            html += '<div class="filter-row"><div class="filter-field"><label class="filter-label">Store</label><select id="fStore"><option value="">All stores</option>'
+                  + stores.map(x => '<option value="'+x.replace(/"/g,'&quot;')+'"'+(F.store===x?' selected':'')+'>'+x+'</option>').join('') + '</select></div></div>';
+        }
+        html += '</div>';
+
+        // Headline counts
+        html += '<div class="section-label">Headline counts</div>';
+        html += '<div class="count-grid">';
+        html += '<div class="count-card total"><div class="count-num">'+m.recallSlots+'</div><div class="count-label">Recall slots (TP + FN)</div></div>';
+        html += '<div class="count-card tp"><div class="count-num">'+m.tp+'</div><div class="count-label">True Positives</div></div>';
+        html += '<div class="count-card fn"><div class="count-num">'+m.fn+'</div><div class="count-label">False Negatives</div></div>';
+        html += '<div class="count-card fp"><div class="count-num">'+m.fp+'</div><div class="count-label">False Positives</div></div>';
+        html += '</div>';
+
+        // Recall + Precision
+        html += '<div class="metric-grid">';
+        html += '<div class="metric-card"><div class="metric-title">Recall (model)</div><div class="metric-big">'+fmtPct(m.recallModel)+'</div><div class="metric-sub">TP / (TP + Model FN)</div><div class="metric-raw">Raw: '+fmtPct(m.recallRaw)+'</div></div>';
+        html += '<div class="metric-card"><div class="metric-title">Precision (model)</div><div class="metric-big">'+fmtPct(m.precisionModel)+'</div><div class="metric-sub">TP / (TP + Model FP)</div><div class="metric-raw">Raw: '+fmtPct(m.precisionRaw)+'</div></div>';
+        html += '</div>';
+        html += '<div class="note-line">Headline figures exclude operational issues (Captana methodology). "Raw" includes everything, for reference only.</div>';
+
+        // By category
+        const cats = byCategory(rows);
+        const catNames = PRODUCT_CATEGORIES.filter(c => cats[c]);
+        if (catNames.length) {
+            html += '<div class="section-label">Recall &amp; precision by category (model)</div>';
+            html += '<div class="table-card">';
+            html += '<div class="trow head"><span class="tname">Category</span><span class="tnum">TP</span><span class="tnum">FN</span><span class="tpct">Rec</span><span class="tpct">Prec</span></div>';
+            catNames.forEach(cn => {
+                const d = cats[cn];
+                const rec = pct(d.tp, d.tp + d.fnModel);
+                const prec = pct(d.tp, d.tp + d.fpModel);
+                html += '<div class="trow"><span class="tname">'+cn+'</span><span class="tnum">'+d.tp+'</span><span class="tnum">'+d.fnModel+'</span>'
+                      + '<span class="tpct'+(rec===null?' muted':'')+'">'+fmtPct(rec)+'</span><span class="tpct'+(prec===null?' muted':'')+'">'+fmtPct(prec)+'</span></div>';
+            });
+            html += '</div>';
+        }
+
+        // FN reasons + split
+        html += '<div class="section-label">False Negatives by reason</div>';
+        html += renderReasons(reasonBreakdown(rows, ROOT_CAUSE_DEFS, 'False Negative'), ROOT_CAUSE_DEFS, '#EA580C');
+        html += renderSplit(m.fnModel, m.fnOps);
+
+        // FP reasons + split
+        html += '<div class="section-label">False Positives by reason</div>';
+        html += renderReasons(reasonBreakdown(rows, FP_REASON_DEFS, 'False Positive'), FP_REASON_DEFS, '#DB2777');
+        html += renderSplit(m.fpModel, m.fpOps);
+
+        html += '<button class="refresh-btn" onclick="reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh data</button>';
+
+        c.innerHTML = html;
+        wireFilters();
+    }
+
+    function renderReasons(bd, defs, color) {
+        if (bd.total === 0) return '<div class="table-card"><div class="reason-row"><span class="reason-name" style="color:#9CA3AF">None recorded</span></div></div>';
+        let h = '<div class="table-card">';
+        defs.forEach(d => {
+            const n = bd.counts[d.label] || 0;
+            if (n === 0) return;
+            const w = Math.round((n / bd.total) * 100);
+            h += '<div><div class="reason-row"><span class="reason-name">'+d.label+'</span>'
+               + '<span class="reason-tag '+d.type.toLowerCase()+'">'+d.type+'</span>'
+               + '<span class="reason-count">'+n+'</span></div>'
+               + '<div class="reason-bar-wrap"><div class="reason-bar" style="width:'+w+'%;background:'+color+'"></div></div></div>';
+        });
+        h += '</div>';
+        return h;
+    }
+
+    function renderSplit(model, ops) {
+        const tot = model + ops;
+        const mp = tot ? Math.round(model/tot*100) : 0;
+        const op = tot ? Math.round(ops/tot*100) : 0;
+        return '<div class="split-grid" style="margin-top:10px">'
+            + '<div class="split-card"><div class="split-num model">'+model+'</div><div class="split-label">Model</div><div class="split-pct">'+mp+'%</div></div>'
+            + '<div class="split-card"><div class="split-num operational">'+ops+'</div><div class="split-label">Operational</div><div class="split-pct">'+op+'%</div></div>'
+            + '</div>';
+    }
+
+    function wireFilters() {
+        const bind = (id, key, isDate) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', () => { F[key] = el.value; render(); });
+        };
+        bind('fFrom','from'); bind('fTo','to'); bind('fCat','category');
+        bind('fCls','classification'); bind('fStore','store');
+    }
+
+    async function reload() {
+        document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div>Loading records…</div>';
+        try {
+            ALL = await fetchRecords();
+            render();
+        } catch (e) {
+            document.getElementById('content').innerHTML = '<div class="error">Couldn\'t load data.<br>' + (e && e.message ? e.message : e) + '<br><br>Make sure the Apps Script is redeployed with the new doGet.</div>';
+        }
+    }
+
+    reload();
+</script>
+</body>
+</html>

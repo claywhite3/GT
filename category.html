@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <title>Captana — Select Category</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'DM Sans', sans-serif; background: #F2F3F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; color: #111827; }
+        .shell { width: 100%; max-width: 390px; min-height: 100vh; background: #F2F3F7; display: flex; flex-direction: column; padding: 0 20px 110px; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px 0 8px; position: relative; }
+        .back-btn { width: 38px; height: 38px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: none; cursor: pointer; text-decoration: none; }
+        .back-btn svg { width: 18px; height: 18px; color: #111827; }
+        .home-btn { position: absolute; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: none; cursor: pointer; text-decoration: none; }
+        .home-btn svg { width: 19px; height: 19px; color: #111827; }
+        .avatar { width: 40px; height: 40px; background: #2563EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+
+        .hero { padding: 12px 4px 0; margin-bottom: 18px; animation: fadeUp .4s ease both; }
+        .eyebrow { font-size: 11px; font-weight: 700; color: #2563EB; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+        .hero-title { font-size: 26px; font-weight: 800; color: #111827; line-height: 1.15; }
+        .hero-sub { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 6px; line-height: 1.5; }
+
+        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .cat-card { display: flex; align-items: center; gap: 10px; background: #fff; border: 2px solid transparent; border-radius: 16px; padding: 16px 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(17,24,39,0.06); transition: transform .12s, border-color .16s, box-shadow .16s; animation: fadeUp .35s ease both; text-align: left; min-height: 60px; }
+        .cat-card:active { transform: scale(.97); }
+        .cat-card.selected { border-color: #2563EB; box-shadow: 0 4px 14px rgba(37,99,235,0.18); }
+        .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: #2563EB; }
+        .cat-name { font-size: 14px; font-weight: 700; color: #111827; line-height: 1.2; }
+        .cat-card.selected .cat-name { color: #2563EB; }
+
+        .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; background: #fff; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); border-top: 1px solid #F3F4F6; }
+        .btn-continue { width: 100%; padding: 16px; background: #2563EB; color: #fff; border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(37,99,235,0.3); transition: transform .15s, opacity .15s; }
+        .btn-continue:active { transform: scale(.975); }
+        .btn-continue.disabled { opacity: .45; pointer-events: none; }
+        .btn-continue svg { width: 18px; height: 18px; }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="top-bar">
+        <a href="flow_picker.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <a href="flow_picker.html" class="home-btn" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/><path d="M9 21v-6h6v6"/></svg></a>
+        <div class="avatar" id="avatarEl">GT</div>
+    </div>
+
+    <div class="hero">
+        <div class="eyebrow">Step 1 — Category</div>
+        <div class="hero-title">Select a Category</div>
+        <div class="hero-sub">Pick the product category you're auditing. It applies to every scan until you change it.</div>
+    </div>
+
+    <div class="cat-grid" id="catGrid"></div>
+</div>
+
+<div class="bottom-bar">
+    <button class="btn-continue disabled" id="continueBtn" onclick="proceed()">
+        Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+</div>
+
+<script src="app.js"></script>
+<script>
+    Session.requireLogin();
+    try { document.getElementById('avatarEl').textContent = Session.initials(); } catch (e) {}
+
+    let selected = Session.get('category') || null;
+
+    function render() {
+        const grid = document.getElementById('catGrid');
+        grid.innerHTML = PRODUCT_CATEGORIES.map(cat =>
+            `<button class="cat-card${selected === cat ? ' selected' : ''}" onclick="pick('${cat.replace(/'/g, "\\'")}')">
+                <span class="cat-dot"></span>
+                <span class="cat-name">${cat}</span>
+            </button>`
+        ).join('');
+        if (selected) document.getElementById('continueBtn').classList.remove('disabled');
+    }
+
+    function pick(cat) {
+        selected = cat;
+        render();
+    }
+
+    function proceed() {
+        if (!selected) return;
+        Session.set('category', selected);
+        window.location.href = 'scan_camera.html';
+    }
+
+    render();
+</script>
+</body>
+</html>
