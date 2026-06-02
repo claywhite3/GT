@@ -128,6 +128,17 @@
         else if (e.key === 'Escape') ScanController.closeManual();
     });
 
+    // Immediate boot diagnostic — appears as soon as the page parses, so the
+    // log panel is visible even if the scanner never starts.
+    (function bootLog() {
+        var panel = document.getElementById('scanLog');
+        if (!panel) return;
+        panel.style.display = 'block';
+        var keyLen = (window.SCANDIT_LICENSE_KEY || '').length;
+        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.15.1 · key length ' + keyLen + '\n';
+';
+    })();
+
     window.addEventListener('load', () => {
         ScanController.init({
             onComplete: (value) => {
