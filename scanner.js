@@ -16,6 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
+  const SCANNER_VERSION = 'scanner v0.16.1';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -71,6 +72,7 @@ const ScanController = (function () {
   /* ---- shared lifecycle ------------------------------------------------- */
   async function init(options) {
     opts = options || {};
+    log(SCANNER_VERSION + ' loaded');
     if (opts.manualTitle) $('manualTitle').textContent = opts.manualTitle;
     if (opts.manualSub) $('manualSub').textContent = opts.manualSub;
     if (opts.manualPlaceholder) $('manualInput').placeholder = opts.manualPlaceholder;
@@ -87,30 +89,37 @@ const ScanController = (function () {
     $('cameraStateText').textContent = 'Starting camera\u2026';
   }
 
+  let starting = false;
   async function start() {
-    resetUiForStart();
-    await stop();   // tear down whatever was running
+    if (starting) { log('start() ignored \u2014 already starting'); return; }
+    starting = true;
+    try {
+      resetUiForStart();
+      await stop();   // tear down whatever was running
 
-    const key = (typeof window !== 'undefined' && window.SCANDIT_LICENSE_KEY) ? window.SCANDIT_LICENSE_KEY : '';
-    if (key) {
-      log('Scandit key present (length ' + key.length + '). Attempting Scandit\u2026');
-      try {
-        await startScandit(key);
-        engine = 'scandit';
-        log('Scandit started OK \u2713');
-        $('cameraState').classList.add('hidden');
-        return;
-      } catch (e) {
-        log('Scandit FAILED: ' + (e && e.message ? e.message : String(e)));
-        console.warn('[scanner] Scandit failed, falling back to html5-qrcode:', e);
-        await stopScandit();
+      const key = (typeof window !== 'undefined' && window.SCANDIT_LICENSE_KEY) ? window.SCANDIT_LICENSE_KEY : '';
+      if (key) {
+        log('Scandit key present (length ' + key.length + '). Attempting Scandit\u2026');
+        try {
+          await startScandit(key);
+          engine = 'scandit';
+          log('Scandit started OK \u2713');
+          $('cameraState').classList.add('hidden');
+          return;
+        } catch (e) {
+          log('Scandit FAILED: ' + (e && e.message ? e.message : String(e)));
+          console.warn('[scanner] Scandit failed, falling back to html5-qrcode:', e);
+          await stopScandit();
+        }
+      } else {
+        log('No Scandit key set \u2014 using html5-qrcode fallback.');
       }
-    } else {
-      log('No Scandit key set \u2014 using html5-qrcode fallback.');
+      await startHtml5();
+      engine = 'html5';
+      log('Using html5-qrcode engine.');
+    } finally {
+      starting = false;
     }
-    await startHtml5();
-    engine = 'html5';
-    log('Using html5-qrcode engine.');
   }
 
   function handleSuccess(decodedText) {
