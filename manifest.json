@@ -1,6 +1,6 @@
 {
-  "name": "Vusion TopStock Ground Truth",
-  "short_name": "TopStock GT",
+  "name": "Captana Ground Truth",
+  "short_name": "Captana GT",
   "description": "Ground truth collection for out-of-shelf coverage.",
   "start_url": "index.html",
   "scope": "./",

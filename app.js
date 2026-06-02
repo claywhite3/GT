@@ -1,5 +1,5 @@
 /* =========================================================================
-   Vusion TopStock — Ground Truth Collection
+   Captana — Ground Truth Collection
    Shared application module: data definitions + storage layer
    =========================================================================
 
