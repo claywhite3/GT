@@ -107,6 +107,7 @@ const Records = {
   // Build a record from current session + the issue specifics.
   build({ outOfShelfBarcode, classification, rootCause }) {
     return {
+      id: (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)),
       timestamp: new Date().toISOString(),
       email: Session.get('email'),
       storeType: Session.get('storeTypeName'),
@@ -118,6 +119,9 @@ const Records = {
     };
   },
 };
+
+// Module-level lock so two flushes can never run at once (prevents double-send).
+let _flushing = false;
 
 /*
    saveRecord(record) -> Promise<{ok:boolean, queued:boolean}>
@@ -133,30 +137,52 @@ async function saveRecord(record) {
 
 /*
    flushRecords() -> attempts to send every queued record to the backend.
-   Removes successfully-sent records from the queue.
+   Guarded by a lock so overlapping calls can't send the same record twice.
+   Each record is removed from the queue the instant it's sent.
 */
 async function flushRecords() {
-  let q = Records._readQueue();
-  if (q.length === 0) return { flushedAll: true, remaining: 0 };
-
   if (!GOOGLE_SHEET_ENDPOINT) {
-    // No backend configured yet — keep everything queued locally.
+    const q = Records._readQueue();
     console.warn('[storage] No GOOGLE_SHEET_ENDPOINT set. Records held in local queue:', q.length);
     return { flushedAll: false, remaining: q.length };
   }
 
-  const stillPending = [];
-  for (const rec of q) {
-    try {
-      const ok = await pushToBackend(rec);
-      if (!ok) stillPending.push(rec);
-    } catch (e) {
-      console.error('[storage] push failed, re-queueing:', e);
-      stillPending.push(rec);
-    }
+  // If a flush is already running, don't start a second one — that's what
+  // produced duplicate rows. The in-flight flush will handle everything.
+  if (_flushing) {
+    return { flushedAll: false, remaining: Records._readQueue().length };
   }
-  Records._writeQueue(stillPending);
-  return { flushedAll: stillPending.length === 0, remaining: stillPending.length };
+
+  _flushing = true;
+  try {
+    // Process one record at a time. Remove it from the queue BEFORE the next
+    // iteration so a crash/refresh can't replay an already-sent record.
+    while (true) {
+      const q = Records._readQueue();
+      if (q.length === 0) break;
+      const rec = q[0];
+      let ok = false;
+      try {
+        ok = await pushToBackend(rec);
+      } catch (e) {
+        console.error('[storage] push failed, will retry later:', e);
+        ok = false;
+      }
+      if (ok) {
+        // Re-read in case something changed, then drop this exact record by id.
+        const cur = Records._readQueue();
+        const idx = cur.findIndex(r => r.id === rec.id);
+        if (idx !== -1) cur.splice(idx, 1);
+        Records._writeQueue(cur);
+      } else {
+        // Couldn't send — stop and leave the queue intact for a later retry.
+        return { flushedAll: false, remaining: q.length };
+      }
+    }
+    return { flushedAll: true, remaining: 0 };
+  } finally {
+    _flushing = false;
+  }
 }
 
 /* -------------------------------------------------------------------------
