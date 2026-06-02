@@ -55,6 +55,7 @@
         .test-result { font-size: 12px; font-weight: 600; margin-top: 10px; min-height: 16px; line-height: 1.5; padding: 0 20px; }
         .test-result.ok { color: #16A34A; }
         .test-result.warn { color: #B45309; }
+        .version-stamp { text-align: center; font-size: 11px; font-weight: 600; color: #C0C4CC; margin-top: 24px; padding-bottom: 20px; letter-spacing: .3px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
@@ -110,6 +111,8 @@
         </button>
         <div class="test-result" id="testResult"></div>
     </div>
+
+    <div class="version-stamp">v0.3.0 · build 2026-06-02</div>
 </div>
 
 <script src="app.js"></script>
