@@ -16,7 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.17.3';
+  const SCANNER_VERSION = 'scanner v0.17.4';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -158,8 +158,14 @@ const ScanController = (function () {
     if (checkEl) { checkEl.style.animation = 'none'; void checkEl.offsetWidth; checkEl.style.animation = ''; }
 
     if (typeof opts.onComplete === 'function') {
-      log('firing onComplete');
-      try { opts.onComplete(value); } catch (e) { log('onComplete error: ' + e); }
+      log('firing onComplete for: ' + value);
+      try {
+        opts.onComplete(value);
+        const nb = document.getElementById('nextBtn');
+        log('nextBtn disabled now? ' + (nb ? nb.classList.contains('disabled') : 'no nextBtn'));
+      } catch (e) { log('onComplete error: ' + e); }
+    } else {
+      log('NO onComplete callback registered');
     }
 
     // Now tear the camera down (errors here no longer block the callback).
