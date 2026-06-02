@@ -38,6 +38,20 @@ const ScanController = (function () {
   const successSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
   function $(id) { return document.getElementById(id); }
 
+  // Visible logging — writes to console AND to an on-screen #scanLog panel (if present)
+  // so we can diagnose Scandit on a phone where the console isn't accessible.
+  function log(msg) {
+    const line = '[scanner] ' + msg;
+    console.log(line);
+    const panel = $('scanLog');
+    if (panel) {
+      panel.style.display = 'block';
+      const t = new Date().toISOString().slice(11, 19);
+      panel.textContent += t + '  ' + msg + '\n';
+      panel.scrollTop = panel.scrollHeight;
+    }
+  }
+
   function H5Formats() {
     return [
       Html5QrcodeSupportedFormats.CODE_128,
@@ -79,18 +93,24 @@ const ScanController = (function () {
 
     const key = (typeof window !== 'undefined' && window.SCANDIT_LICENSE_KEY) ? window.SCANDIT_LICENSE_KEY : '';
     if (key) {
+      log('Scandit key present (length ' + key.length + '). Attempting Scandit\u2026');
       try {
         await startScandit(key);
         engine = 'scandit';
+        log('Scandit started OK \u2713');
         $('cameraState').classList.add('hidden');
         return;
       } catch (e) {
+        log('Scandit FAILED: ' + (e && e.message ? e.message : String(e)));
         console.warn('[scanner] Scandit failed, falling back to html5-qrcode:', e);
         await stopScandit();
       }
+    } else {
+      log('No Scandit key set \u2014 using html5-qrcode fallback.');
     }
     await startHtml5();
     engine = 'html5';
+    log('Using html5-qrcode engine.');
   }
 
   function handleSuccess(decodedText) {
@@ -131,8 +151,11 @@ const ScanController = (function () {
 
   /* ---- SCANDIT engine --------------------------------------------------- */
   async function startScandit(licenseKey) {
+    log('importing core module\u2026');
     if (!SDC) SDC = await import('@scandit/web-datacapture-core');
+    log('core OK; importing barcode module\u2026');
     if (!SDCBarcode) SDCBarcode = await import('@scandit/web-datacapture-barcode');
+    log('barcode module OK');
 
     const { DataCaptureView, Camera, DataCaptureContext, FrameSourceState } = SDC;
     const { barcodeCaptureLoader, BarcodeCaptureSettings, BarcodeCapture, Symbology } = SDCBarcode;
@@ -141,17 +164,21 @@ const ScanController = (function () {
     mount.innerHTML = '';
     sdcView = new DataCaptureView();
     sdcView.connectToElement(mount);
+    log('view mounted; creating context (loading WASM)\u2026');
 
     sdcContext = await DataCaptureContext.forLicenseKey(licenseKey, {
       libraryLocation: 'https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8/sdc-lib/',
       moduleLoaders: [barcodeCaptureLoader()],
     });
+    log('context created; setting view context\u2026');
     await sdcView.setContext(sdcContext);
 
+    log('selecting camera\u2026');
     sdcCamera = Camera.pickBestGuess ? Camera.pickBestGuess() : Camera.default;
     const camSettings = BarcodeCapture.recommendedCameraSettings;
     if (sdcCamera && camSettings) await sdcCamera.applySettings(camSettings);
     await sdcContext.setFrameSource(sdcCamera);
+    log('turning camera on\u2026');
     await sdcContext.frameSource.switchToDesiredState(FrameSourceState.On);
 
     const settings = new BarcodeCaptureSettings();
@@ -161,6 +188,7 @@ const ScanController = (function () {
       Symbology.InterleavedTwoOfFive, Symbology.Codabar,
       Symbology.QR, Symbology.DataMatrix,
     ]);
+    log('symbologies enabled; creating capture mode\u2026');
 
     sdcBarcodeCapture = await BarcodeCapture.forContext(sdcContext, settings);
     sdcBarcodeCapture.addListener({
@@ -172,6 +200,7 @@ const ScanController = (function () {
       },
     });
     await sdcBarcodeCapture.setEnabled(true);
+    log('capture enabled');
   }
 
   async function stopScandit() {
