@@ -26,14 +26,17 @@ const STORE_TYPES = [
   {
     id: 'sainsburys',
     name: "Sainsbury's",
-    color: '#F06C00',
+    color: '#EE8B00',   // Sainsbury's-evocative orange
     initial: 'S',
+    wordStyle: 'plain',
   },
   {
     id: 'lidl',
     name: 'Lidl',
-    color: '#0050AA',
+    color: '#0050AA',   // Lidl-evocative blue
     initial: 'L',
+    wordStyle: 'lidl',  // blue with a red "i"
+    accent: '#E60A14',  // red accent for the "i"
   },
 ];
 

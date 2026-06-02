@@ -30,10 +30,9 @@
         .type-card:nth-child(2) { animation-delay: .12s; }
         .type-card:active { transform: scale(.985); }
         .type-card.selected { border-color: #2563EB; }
-        .type-logo { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; font-weight: 800; flex-shrink: 0; }
         .type-info { flex: 1; }
-        .type-name { font-size: 18px; font-weight: 800; color: #111827; }
-        .type-meta { font-size: 13px; color: #9CA3AF; font-weight: 500; margin-top: 2px; }
+        .word-mark { display: block; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+        .type-meta { font-size: 13px; color: #9CA3AF; font-weight: 500; margin-top: 4px; }
         .type-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #E5E7EB; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .18s, border-color .18s; }
         .type-card.selected .type-check { background: #2563EB; border-color: #2563EB; }
         .type-check svg { width: 13px; height: 13px; color: #fff; opacity: 0; transition: opacity .15s; }
@@ -80,15 +79,28 @@
 
     const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
+    function styledWord(t) {
+        if (t.wordStyle === 'lidl') {
+            // "Lidl" in blue, with the "i" recolored red
+            const accent = t.accent || '#E60A14';
+            const chars = t.name.split('').map(ch =>
+                ch.toLowerCase() === 'i'
+                    ? `<span style="color:${accent}">${ch}</span>`
+                    : ch
+            ).join('');
+            return `<span class="word-mark" style="color:${t.color}">${chars}</span>`;
+        }
+        return `<span class="word-mark" style="color:${t.color}">${t.name}</span>`;
+    }
+
     function render() {
         const el = document.getElementById('typeList');
         el.innerHTML = STORE_TYPES.map(t => {
             const count = (STORES_BY_TYPE[t.id] || []).length;
             const meta = count === 1 ? '1 store' : count + ' stores';
             return `<div class="type-card${selectedId === t.id ? ' selected' : ''}" onclick="selectType('${t.id}')">
-                <div class="type-logo" style="background:${t.color}">${t.initial}</div>
                 <div class="type-info">
-                    <div class="type-name">${t.name}</div>
+                    ${styledWord(t)}
                     <div class="type-meta">${meta} available</div>
                 </div>
                 <div class="type-check">${CHECK}</div>
