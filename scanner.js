@@ -182,13 +182,21 @@ const ScanController = (function () {
     await sdcContext.frameSource.switchToDesiredState(FrameSourceState.On);
 
     const settings = new BarcodeCaptureSettings();
-    settings.enableSymbologies([
-      Symbology.Code128, Symbology.Code39, Symbology.Code93,
-      Symbology.Ean13Upca, Symbology.Ean8, Symbology.Upce,
-      Symbology.InterleavedTwoOfFive, Symbology.Codabar,
-      Symbology.QR, Symbology.DataMatrix,
-    ]);
-    log('symbologies enabled; creating capture mode\u2026');
+    const wanted = [
+      'Code128', 'Code39', 'Code93',
+      'EAN13UPCA', 'EAN8', 'UPCE',
+      'InterleavedTwoOfFive', 'Codabar',
+      'QR', 'DataMatrix',
+    ];
+    const valid = [];
+    const skipped = [];
+    wanted.forEach(name => {
+      if (Symbology[name] !== undefined) valid.push(Symbology[name]);
+      else skipped.push(name);
+    });
+    if (skipped.length) log('skipped unknown symbologies: ' + skipped.join(', '));
+    settings.enableSymbologies(valid);
+    log('symbologies enabled (' + valid.length + '); creating capture mode\u2026');
 
     sdcBarcodeCapture = await BarcodeCapture.forContext(sdcContext, settings);
     sdcBarcodeCapture.addListener({
