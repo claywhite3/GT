@@ -16,7 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.17.2';
+  const SCANNER_VERSION = 'scanner v0.17.3';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -127,6 +127,7 @@ const ScanController = (function () {
     const value = String(decodedText || '').trim();
     if (!value) { shake(); return; }
     scanCompleted = true;
+    log('handleSuccess: ' + value);
     complete(value);
   }
 
@@ -142,8 +143,9 @@ const ScanController = (function () {
   async function complete(value) {
     successSound.play().catch(() => {});
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    await stop();
 
+    // Update the UI and fire the callback FIRST, so the page's button enables
+    // even if camera teardown below is slow or throws.
     $('completeScreen').style.display = 'flex';
     $('rescanBtn').classList.remove('hidden');
     $('manualEntryBtn').classList.add('hidden');
@@ -155,7 +157,13 @@ const ScanController = (function () {
     const checkEl = $('completeCheck');
     if (checkEl) { checkEl.style.animation = 'none'; void checkEl.offsetWidth; checkEl.style.animation = ''; }
 
-    if (typeof opts.onComplete === 'function') opts.onComplete(value);
+    if (typeof opts.onComplete === 'function') {
+      log('firing onComplete');
+      try { opts.onComplete(value); } catch (e) { log('onComplete error: ' + e); }
+    }
+
+    // Now tear the camera down (errors here no longer block the callback).
+    try { await stop(); } catch (e) { log('stop after complete failed: ' + e); }
   }
 
   /* ---- SCANDIT engine --------------------------------------------------- */
@@ -235,10 +243,18 @@ const ScanController = (function () {
     sdcBarcodeCapture = await BarcodeCapture.forContext(sdcContext, settings);
     sdcBarcodeCapture.addListener({
       didScan: (mode, session) => {
-        const barcode = session.newlyRecognizedBarcode ||
-          (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes[0]);
-        if (!barcode) return;
-        handleSuccess(barcode.data || '');
+        log('didScan fired');
+        let barcode = null;
+        try {
+          barcode = session.newlyRecognizedBarcode
+            || (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes[0])
+            || (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes.length
+                ? session.newlyRecognizedBarcodes[0] : null);
+        } catch (e) { log('barcode read error: ' + e); }
+        if (!barcode) { log('didScan: no barcode in session'); return; }
+        const data = (barcode.data != null ? barcode.data : (barcode.rawData || ''));
+        log('scanned: ' + data);
+        handleSuccess(String(data));
       },
     });
     await sdcBarcodeCapture.setEnabled(true);
