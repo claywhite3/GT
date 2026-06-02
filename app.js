@@ -136,6 +136,20 @@ async function saveRecord(record) {
 }
 
 /*
+   queueRecord(record) -> void  (SYNCHRONOUS, non-blocking)
+   Writes the record to the local queue immediately and kicks off a background
+   flush that the caller does NOT await. Use this when navigating right after
+   saving, so the UI never waits on the network round-trip.
+*/
+function queueRecord(record) {
+  const q = Records._readQueue();
+  q.push(record);
+  Records._writeQueue(q);
+  // Fire-and-forget; the queue + lock guarantee it sends exactly once.
+  Promise.resolve().then(() => flushRecords()).catch(() => {});
+}
+
+/*
    flushRecords() -> attempts to send every queued record to the backend.
    Guarded by a lock so overlapping calls can't send the same record twice.
    Each record is removed from the queue the instant it's sent.

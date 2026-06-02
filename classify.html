@@ -12,7 +12,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'DM Sans', sans-serif; background: #F2F3F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; color: #111827; }
-        .shell { width: 100%; max-width: 390px; min-height: 100vh; background: #F2F3F7; display: flex; flex-direction: column; padding-bottom: 28px; }
+        .shell { width: 100%; max-width: 390px; min-height: 100vh; background: #F2F3F7; display: flex; flex-direction: column; padding-bottom: 100px; }
 
         .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px 20px 8px; }
         .top-bar-right { display: flex; align-items: center; gap: 8px; }
@@ -42,8 +42,20 @@
         .class-text { flex: 1; }
         .class-name { font-size: 19px; font-weight: 800; color: #111827; line-height: 1.15; }
         .class-desc { font-size: 13px; font-weight: 500; color: #6B7280; margin-top: 3px; line-height: 1.4; }
-        .chev { color: #C5CAD3; flex-shrink: 0; }
-        .chev svg { width: 20px; height: 20px; }
+        .pick { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #E5E7EB; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .16s, border-color .16s; }
+        .pick svg { width: 13px; height: 13px; color: #fff; opacity: 0; transition: opacity .15s; }
+        .class-card.selected .pick svg { opacity: 1; }
+        .class-card.selected { border-color: #2563EB; }
+        .class-card.tp.selected { border-color: #16A34A; }
+        .class-card.tp.selected .pick { background: #16A34A; border-color: #16A34A; }
+        .class-card.fp.selected, .class-card.fn.selected { border-color: #EA580C; }
+        .class-card.fp.selected .pick, .class-card.fn.selected .pick { background: #EA580C; border-color: #EA580C; }
+
+        .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; background: #fff; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); border-top: 1px solid #F3F4F6; }
+        .btn-continue { width: 100%; padding: 16px; background: #2563EB; color: #fff; border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(37,99,235,0.3); transition: transform .15s, opacity .15s; }
+        .btn-continue:active { transform: scale(.975); }
+        .btn-continue.disabled { opacity: .45; pointer-events: none; }
+        .btn-continue svg { width: 18px; height: 18px; }
 
         /* True positive — green */
         .class-card.tp .sign { background: #DCFCE7; }
@@ -101,33 +113,40 @@
     </div>
 
     <div class="cards">
-        <div class="class-card tp" onclick="chooseTP()">
+        <div class="class-card tp" id="card-tp" onclick="selectClass('tp')">
             <div class="sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
             <div class="class-text">
                 <div class="class-name">True Positive</div>
                 <div class="class-desc">Detection was correct — really out of shelf.</div>
             </div>
-            <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+            <div class="pick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
         </div>
 
-        <div class="class-card fp" onclick="openFP()">
+        <div class="class-card fp" id="card-fp" onclick="selectClass('fp')">
             <div class="sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
             <div class="class-text">
                 <div class="class-name">False Positive</div>
                 <div class="class-desc">Flagged out of shelf, but the product was there.</div>
             </div>
-            <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+            <div class="pick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
         </div>
 
-        <div class="class-card fn" onclick="chooseFN()">
+        <div class="class-card fn" id="card-fn" onclick="selectClass('fn')">
             <div class="sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
             <div class="class-text">
                 <div class="class-name">False Negative</div>
                 <div class="class-desc">Out of shelf was missed — pick a root cause.</div>
             </div>
-            <div class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+            <div class="pick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
         </div>
     </div>
+</div>
+
+<div class="bottom-bar">
+    <button class="btn-continue disabled" id="continueBtn" onclick="proceed()">
+        Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
 </div>
 
 <!-- False Positive text entry -->
@@ -164,32 +183,38 @@
         setTimeout(() => t.classList.remove('show'), 1300);
     }
 
-    async function persist(classification, rootCause) {
+    let selected = null;   // 'tp' | 'fp' | 'fn'
+
+    function selectClass(kind) {
+        selected = kind;
+        ['tp', 'fp', 'fn'].forEach(k => {
+            document.getElementById('card-' + k).classList.toggle('selected', k === kind);
+        });
+        document.getElementById('continueBtn').classList.remove('disabled');
+    }
+
+    // queue the record (instant) and loop back to scan another out-of-shelf
+    function queueAndLoop(classification, rootCause) {
         const record = Records.build({
             outOfShelfBarcode: Session.get('oosBarcode'),
             classification: classification,
             rootCause: rootCause || '',
         });
-        const res = await saveRecord(record);
-        showToast(res.queued ? 'Saved locally (will sync)' : 'Saved \u2713');
-    }
-
-    // loop back to scan another out-of-shelf for the same camera
-    function loopBack() {
+        queueRecord(record);            // non-blocking, syncs in background
         Session.del('oosBarcode');
-        setTimeout(() => { window.location.href = 'scan_oos.html'; }, 350);
+        window.location.href = 'scan_oos.html';
     }
 
-    // True Positive — good, save and loop
-    async function chooseTP() {
-        await persist('True Positive', '');
-        loopBack();
-    }
-
-    // False Negative — go to the root cause page (it will save with classification)
-    function chooseFN() {
-        Session.set('classification', 'False Negative');
-        window.location.href = 'root_cause.html';
+    function proceed() {
+        if (!selected) return;
+        if (selected === 'tp') {
+            queueAndLoop('True Positive', '');
+        } else if (selected === 'fn') {
+            Session.set('classification', 'False Negative');
+            window.location.href = 'root_cause.html';
+        } else if (selected === 'fp') {
+            openFP();
+        }
     }
 
     // False Positive — open text entry
@@ -202,15 +227,14 @@
     }
     function closeFP() { document.getElementById('fpOverlay').classList.remove('open'); }
 
-    async function saveFP() {
+    function saveFP() {
         const text = document.getElementById('fpInput').value.trim();
         if (!text) {
             document.getElementById('fpError').textContent = 'Please describe what happened.';
             return;
         }
         closeFP();
-        await persist('False Positive', text);
-        loopBack();
+        queueAndLoop('False Positive', text);
     }
 
     document.getElementById('fpInput').addEventListener('keydown', e => {

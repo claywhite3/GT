@@ -166,23 +166,22 @@
         setTimeout(() => t.classList.remove('show'), 1400);
     }
 
-    async function persistCurrent() {
+    function persistCurrent() {
         const record = Records.build({
             outOfShelfBarcode: Session.get('oosBarcode'),
             classification: Session.get('classification') || 'False Negative',
             rootCause: selectedCause,
         });
-        const res = await saveRecord(record);
-        showToast(res.queued ? 'Saved locally (will sync)' : 'Saved \u2713');
+        queueRecord(record);   // instant, syncs in background
     }
 
     // Save this issue, then loop back to scan another out-of-shelf for the SAME camera.
-    async function saveAndNextIssue() {
+    function saveAndNextIssue() {
         if (!selectedCause) return;
-        await persistCurrent();
+        persistCurrent();
         Session.del('oosBarcode');         // keep cameraBarcode, clear the OOS
         Session.del('classification');     // reset for the next issue
-        setTimeout(() => { window.location.href = 'scan_oos.html'; }, 350);
+        window.location.href = 'scan_oos.html';
     }
 
     function openConfirm() {
@@ -194,12 +193,12 @@
     }
 
     // Save this issue, then go back to the camera page for a new camera.
-    async function saveAndFinishCamera() {
-        await persistCurrent();
+    function saveAndFinishCamera() {
+        persistCurrent();
         Session.del('oosBarcode');
         Session.del('classification');
         Session.del('cameraBarcode');
-        setTimeout(() => { window.location.href = 'scan_camera.html'; }, 350);
+        window.location.href = 'scan_camera.html';
     }
 
     renderGrid();
