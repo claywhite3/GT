@@ -19,7 +19,7 @@
 /* ---- CONFIG ------------------------------------------------------------ */
 // Paste your deployed Google Apps Script Web App URL here.
 // (Deploy > New deployment > Web app > Execute as: Me > Who has access: Anyone)
-const GOOGLE_SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzksD9-gUojfwkC6Ksu3gTdNR6Lt5cbGFJKNp9Oz-w-EnFgjEGyoT2mQGePtNA1xOoQ/exec';
+const GOOGLE_SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxwxiU_24iDN6UYRIyIgNQCvzQNyeFkLZcA2rjxehlQM63Wvyc6dz0xDGaxIGPiOibY/exec';
 
 /* ---- STORE DATA -------------------------------------------------------- */
 const STORE_TYPES = [
