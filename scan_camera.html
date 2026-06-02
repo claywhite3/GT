@@ -113,6 +113,16 @@
 <script src="app.js"></script>
 <script type="module" src="scanner.js"></script>
 <script>
+    // Surface ANY uncaught error (including scanner.js module load failures)
+    // to the on-screen log so we can diagnose on a phone.
+    window.addEventListener('error', function (e) {
+        var panel = document.getElementById('scanLog');
+        if (panel) {
+            panel.style.display = 'block';
+            panel.textContent += 'JS ERROR: ' + (e.message || e.error || 'unknown') +
+                (e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno : '') + '\n';
+        }
+    });
     Session.requireLogin();
     document.getElementById('avatarEl').textContent = Session.initials();
     document.getElementById('storeChip').textContent = Session.get('storeName', 'Store');
@@ -135,10 +145,26 @@
         if (!panel) return;
         panel.style.display = 'block';
         var keyLen = (window.SCANDIT_LICENSE_KEY || '').length;
-        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.17.5 · key length ' + keyLen + '\n';
+        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.18.0 · key length ' + keyLen + '\n';
     })();
 
-    window.addEventListener('load', () => {
+    var scannerTries = 0;
+    function startScanner() {
+        if (typeof ScanController === 'undefined' || !window.ScanController) {
+            scannerTries++;
+            var panel = document.getElementById('scanLog');
+            if (panel && scannerTries % 10 === 1) {
+                panel.style.display = 'block';
+                panel.textContent += 'waiting for scanner module\u2026 (try ' + scannerTries + ')\n';
+            }
+            if (scannerTries > 100) {
+                if (panel) panel.textContent += 'ERROR: scanner module never loaded after 5s\n';
+                return;
+            }
+            return setTimeout(startScanner, 50);
+        }
+        var panel = document.getElementById('scanLog');
+        if (panel) { panel.style.display = 'block'; panel.textContent += 'module ready; calling init\n'; }
         ScanController.init({
             onComplete: (value) => {
                 scannedValue = value;
@@ -149,7 +175,8 @@
             manualSub: 'Type the code printed on the Captana camera.',
             manualPlaceholder: 'Camera ID',
         });
-    });
+    }
+    startScanner();
 
     function goNext() {
         if (!Session.get('cameraBarcode')) return;

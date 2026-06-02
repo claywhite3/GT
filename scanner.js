@@ -16,7 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.17.5';
+  const SCANNER_VERSION = 'scanner v0.18.1';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -71,8 +71,14 @@ const ScanController = (function () {
 
   /* ---- shared lifecycle ------------------------------------------------- */
   async function init(options) {
-    opts = options || {};
-    log(SCANNER_VERSION + ' loaded');
+    options = options || {};
+    log(SCANNER_VERSION + ' init; onComplete=' + (typeof options.onComplete));
+    // Don't let a later arg-less init() wipe a good callback.
+    if (!options.onComplete && opts.onComplete) {
+      log('init called without onComplete; keeping existing one');
+      options.onComplete = opts.onComplete;
+    }
+    opts = options;
     if (opts.manualTitle) $('manualTitle').textContent = opts.manualTitle;
     if (opts.manualSub) $('manualSub').textContent = opts.manualSub;
     if (opts.manualPlaceholder) $('manualInput').placeholder = opts.manualPlaceholder;
