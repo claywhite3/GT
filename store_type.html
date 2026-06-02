@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <title>Vusion TopStock — Select Customer</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'DM Sans', sans-serif; background: #F2F3F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; color: #111827; }
+        .shell { width: 100%; max-width: 390px; min-height: 100vh; background: #F2F3F7; display: flex; flex-direction: column; padding-bottom: 100px; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 8px; }
+        .back-btn { width: 38px; height: 38px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border: none; cursor: pointer; text-decoration: none; }
+        .back-btn svg { width: 18px; height: 18px; color: #111827; }
+        .avatar { width: 40px; height: 40px; background: #2563EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+
+        .hero { padding: 24px 20px 0; animation: fadeUp .4s ease both; }
+        .eyebrow { font-size: 11px; font-weight: 700; color: #2563EB; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+        .hero-title { font-size: 26px; font-weight: 800; color: #111827; line-height: 1.15; }
+        .hero-sub { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 6px; line-height: 1.5; }
+
+        .type-list { padding: 24px 20px 0; display: flex; flex-direction: column; gap: 14px; }
+        .type-card { display: flex; align-items: center; gap: 16px; padding: 20px; background: #fff; border: 2px solid #fff; border-radius: 20px; cursor: pointer; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: border-color .18s, transform .12s; animation: fadeUp .4s ease both; opacity: 0; }
+        .type-card:nth-child(1) { animation-delay: .06s; }
+        .type-card:nth-child(2) { animation-delay: .12s; }
+        .type-card:active { transform: scale(.985); }
+        .type-card.selected { border-color: #2563EB; }
+        .type-logo { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px; font-weight: 800; flex-shrink: 0; }
+        .type-info { flex: 1; }
+        .type-name { font-size: 18px; font-weight: 800; color: #111827; }
+        .type-meta { font-size: 13px; color: #9CA3AF; font-weight: 500; margin-top: 2px; }
+        .type-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #E5E7EB; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .18s, border-color .18s; }
+        .type-card.selected .type-check { background: #2563EB; border-color: #2563EB; }
+        .type-check svg { width: 13px; height: 13px; color: #fff; opacity: 0; transition: opacity .15s; }
+        .type-card.selected .type-check svg { opacity: 1; }
+
+        .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; background: #fff; padding: 14px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.07); border-top: 1px solid #F3F4F6; }
+        .btn-primary { width: 100%; padding: 16px; background: #2563EB; color: #fff; border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(37,99,235,0.3); transition: transform .15s, opacity .15s; }
+        .btn-primary:active { transform: scale(.975); }
+        .btn-primary.disabled { opacity: .45; pointer-events: none; }
+        .btn-primary svg { width: 18px; height: 18px; }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="top-bar">
+        <a href="index.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <div class="avatar" id="avatarEl">GT</div>
+    </div>
+
+    <div class="hero">
+        <div class="eyebrow">Step 1 of 2</div>
+        <div class="hero-title">Select Customer</div>
+        <div class="hero-sub">Which retailer are you recording today?</div>
+    </div>
+
+    <div class="type-list" id="typeList"></div>
+</div>
+
+<div class="bottom-bar">
+    <button class="btn-primary disabled" id="ctaBtn" onclick="proceed()">
+        Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+</div>
+
+<script src="app.js"></script>
+<script>
+    Session.requireLogin();
+    document.getElementById('avatarEl').textContent = Session.initials();
+
+    let selectedId = Session.get('storeType') || null;
+
+    const CHECK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+    function render() {
+        const el = document.getElementById('typeList');
+        el.innerHTML = STORE_TYPES.map(t => {
+            const count = (STORES_BY_TYPE[t.id] || []).length;
+            const meta = count === 1 ? '1 store' : count + ' stores';
+            return `<div class="type-card${selectedId === t.id ? ' selected' : ''}" onclick="selectType('${t.id}')">
+                <div class="type-logo" style="background:${t.color}">${t.initial}</div>
+                <div class="type-info">
+                    <div class="type-name">${t.name}</div>
+                    <div class="type-meta">${meta} available</div>
+                </div>
+                <div class="type-check">${CHECK}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function selectType(id) {
+        selectedId = id;
+        const t = STORE_TYPES.find(x => x.id === id);
+        Session.set('storeType', id);
+        Session.set('storeTypeName', t ? t.name : id);
+        document.getElementById('ctaBtn').classList.remove('disabled');
+        render();
+    }
+
+    function proceed() { window.location.href = 'store_select.html'; }
+
+    render();
+    if (selectedId) document.getElementById('ctaBtn').classList.remove('disabled');
+</script>
+</body>
+</html>

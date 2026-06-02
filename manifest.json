@@ -1,0 +1,16 @@
+{
+  "name": "Vusion TopStock Ground Truth",
+  "short_name": "TopStock GT",
+  "description": "Ground truth collection for out-of-shelf coverage.",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2F3F7",
+  "theme_color": "#2563EB",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

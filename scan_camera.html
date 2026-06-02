@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <title>Vusion TopStock — Scan Camera</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="scanner.css">
+</head>
+<body>
+<div class="phone-shell">
+    <div class="top-bar">
+        <a href="store_select.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <div class="top-bar-right">
+            <div class="context-chip" id="storeChip">Store</div>
+            <div class="avatar" id="avatarEl">GT</div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <div class="eyebrow">Step 1 — Camera</div>
+        <div class="hero-title">Scan the Captana Camera</div>
+        <div class="hero-sub">Scan the barcode on the camera to log which area and camera you're recording.</div>
+    </div>
+
+    <div class="hint-card">
+        <img src="img/scan-camera-hint.svg" alt="Captana camera mounted on the front of a shelf">
+        <div class="hint-caption">Scan the barcode on the Captana camera</div>
+    </div>
+
+    <div class="scanner-card" id="scannerBox">
+        <div id="qrReader" class="qr-reader-mount"></div>
+        <div id="cameraState" class="camera-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <div id="cameraStateText" class="camera-state-text">Starting camera…</div>
+            <button id="cameraRetryBtn" class="camera-retry-btn hidden" onclick="ScanController.retry()">Try Again</button>
+        </div>
+        <div class="scanner-corners"></div>
+
+        <div class="cam-controls">
+            <button class="cam-btn" id="flipBtn" onclick="ScanController.flipCamera()" aria-label="Flip camera">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </button>
+            <button class="cam-btn hidden" id="torchBtn" onclick="ScanController.toggleTorch()" aria-label="Toggle flashlight">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6l-6 6-6-6"/><path d="M6 6h12l-3 9H9z"/><line x1="12" y1="22" x2="12" y2="15"/></svg>
+            </button>
+        </div>
+
+        <div id="completeScreen" class="complete-ui" onclick="goNext()">
+            <div class="complete-check" id="completeCheck">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="complete-label">Camera Logged</div>
+            <div class="complete-cta">Tap to Continue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+    </div>
+
+    <div class="scanner-sub">
+        <button id="rescanBtn" class="btn-text-link hidden" onclick="ScanController.rescan()">Retry scan</button>
+        <button id="manualEntryBtn" class="btn-text-link" onclick="ScanController.openManual()">Enter manually</button>
+    </div>
+
+    <div class="id-card" id="idCard">
+        <div class="id-img-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div class="id-text">
+            <div class="id-label">Captana Camera</div>
+            <div class="id-value" id="idValue">Awaiting scan…</div>
+        </div>
+        <div class="id-badge" id="idBadge">Pending</div>
+    </div>
+
+    <div class="nav-area">
+        <a href="store_select.html" class="btn-back-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
+        <button class="btn-next disabled" id="nextBtn" onclick="goNext()">Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+</div>
+
+<!-- Manual Entry modal -->
+<div class="manual-overlay" id="manualOverlay" onclick="if(event.target===this)ScanController.closeManual()">
+    <div class="manual-sheet">
+        <div class="manual-title" id="manualTitle">Enter Camera ID</div>
+        <div class="manual-sub" id="manualSub">Type the code printed on the Captana camera.</div>
+        <input class="manual-input" id="manualInput" type="text" placeholder="Camera ID" autocomplete="off" spellcheck="false">
+        <div class="manual-error" id="manualError"></div>
+        <div class="manual-actions">
+            <button class="manual-cancel" onclick="ScanController.closeManual()">Cancel</button>
+            <button class="manual-submit" onclick="ScanController.submitManual()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="app.js"></script>
+<script src="scanner.js"></script>
+<script>
+    Session.requireLogin();
+    document.getElementById('avatarEl').textContent = Session.initials();
+    document.getElementById('storeChip').textContent = Session.get('storeName', 'Store');
+
+    let scannedValue = Session.get('cameraBarcode') || '';
+
+    // If returning to this page, clear the per-camera issue context so a new
+    // camera starts a fresh set of out-of-shelf records.
+    Session.del('cameraBarcode');
+
+    document.getElementById('manualInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') ScanController.submitManual();
+        else if (e.key === 'Escape') ScanController.closeManual();
+    });
+
+    window.addEventListener('load', () => {
+        ScanController.init({
+            onComplete: (value) => {
+                scannedValue = value;
+                Session.set('cameraBarcode', value);
+                document.getElementById('nextBtn').classList.remove('disabled');
+            },
+            manualTitle: 'Enter Camera ID',
+            manualSub: 'Type the code printed on the Captana camera.',
+            manualPlaceholder: 'Camera ID',
+        });
+    });
+
+    function goNext() {
+        if (!Session.get('cameraBarcode')) return;
+        window.location.href = 'scan_oos.html';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<svg viewBox="0 0 360 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Captana camera mounted on the front of a shelf">
+  <!-- shelf unit outer frame -->
+  <rect x="24" y="14" width="312" height="172" rx="10" fill="#F9FAFB" stroke="#CBD5E1" stroke-width="2.5"/>
+  <!-- shelves (horizontal dividers) -->
+  <line x1="24" y1="62"  x2="336" y2="62"  stroke="#CBD5E1" stroke-width="2.5"/>
+  <line x1="24" y1="110" x2="336" y2="110" stroke="#CBD5E1" stroke-width="2.5"/>
+  <line x1="24" y1="158" x2="336" y2="158" stroke="#CBD5E1" stroke-width="2.5"/>
+  <!-- shelf front lips -->
+  <rect x="24" y="62"  width="312" height="6" fill="#E2E8F0"/>
+  <rect x="24" y="110" width="312" height="6" fill="#E2E8F0"/>
+  <rect x="24" y="158" width="312" height="6" fill="#E2E8F0"/>
+
+  <!-- generic products: top shelf -->
+  <rect x="40"  y="28" width="22" height="30" rx="3" fill="#E5E9F0"/>
+  <rect x="68"  y="24" width="26" height="34" rx="3" fill="#E5E9F0"/>
+  <rect x="100" y="30" width="20" height="28" rx="3" fill="#E5E9F0"/>
+  <rect x="240" y="26" width="24" height="32" rx="3" fill="#E5E9F0"/>
+  <rect x="270" y="30" width="20" height="28" rx="3" fill="#E5E9F0"/>
+  <rect x="296" y="24" width="24" height="34" rx="3" fill="#E5E9F0"/>
+  <!-- generic products: middle shelf (leave centre clear for the camera callout) -->
+  <rect x="40"  y="76" width="24" height="32" rx="3" fill="#E5E9F0"/>
+  <rect x="70"  y="80" width="20" height="28" rx="3" fill="#E5E9F0"/>
+  <rect x="270" y="78" width="22" height="30" rx="3" fill="#E5E9F0"/>
+  <rect x="298" y="76" width="22" height="32" rx="3" fill="#E5E9F0"/>
+  <!-- generic products: bottom shelf -->
+  <rect x="40"  y="124" width="24" height="32" rx="3" fill="#E5E9F0"/>
+  <rect x="70"  y="120" width="26" height="36" rx="3" fill="#E5E9F0"/>
+  <rect x="240" y="122" width="22" height="34" rx="3" fill="#E5E9F0"/>
+  <rect x="268" y="126" width="22" height="30" rx="3" fill="#E5E9F0"/>
+  <rect x="296" y="120" width="24" height="36" rx="3" fill="#E5E9F0"/>
+
+  <!-- CAPTANA CAMERA: mounted on the middle shelf front lip, centred -->
+  <!-- mounting clip -->
+  <rect x="170" y="104" width="20" height="8" rx="2" fill="#94A3B8"/>
+  <!-- camera body (dark, rounded — matches Captana) -->
+  <g>
+    <rect x="156" y="110" width="48" height="34" rx="7" fill="#131A2B"/>
+    <!-- lens -->
+    <circle cx="172" cy="127" r="9" fill="#1F2937" stroke="#3B4658" stroke-width="2"/>
+    <circle cx="172" cy="127" r="3.5" fill="#475569"/>
+    <!-- small sensor/LED -->
+    <rect x="186" y="120" width="9" height="9" rx="2" fill="#2B3346"/>
+    <circle cx="190.5" cy="137" r="2.2" fill="#3B4658"/>
+  </g>
+
+  <!-- highlight ring + arrow pointing to the camera -->
+  <rect x="148" y="100" width="64" height="54" rx="12" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-dasharray="5 5"/>
+  <path d="M180 178 L180 160" stroke="#F5A623" stroke-width="7" stroke-linecap="round"/>
+  <path d="M172 166 L180 156 L188 166" stroke="#F5A623" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

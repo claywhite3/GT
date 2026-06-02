@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <title>Vusion TopStock — Scan Out of Shelf</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="scanner.css">
+</head>
+<body>
+<div class="phone-shell">
+    <div class="top-bar">
+        <a href="scan_camera.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <div class="top-bar-right">
+            <div class="context-chip" id="cameraChip">Camera</div>
+            <div class="avatar" id="avatarEl">GT</div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <div class="eyebrow">Step 2 — Out of Shelf</div>
+        <div class="hero-title">Scan the Out-of-Shelf</div>
+        <div class="hero-sub">Scan the barcode for this out-of-shelf location, then pick its root cause.</div>
+    </div>
+
+    <div class="hint-card">
+        <img src="img/scan-oos-hint.svg" alt="Out-of-stock shelf slot with an ESL tag on the shelf edge to scan">
+        <div class="hint-caption">Scan the ESL tag on the shelf edge of the empty slot</div>
+    </div>
+
+    <div class="scanner-card" id="scannerBox">
+        <div id="qrReader" class="qr-reader-mount"></div>
+        <div id="cameraState" class="camera-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="36" height="36"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <div id="cameraStateText" class="camera-state-text">Starting camera…</div>
+            <button id="cameraRetryBtn" class="camera-retry-btn hidden" onclick="ScanController.retry()">Try Again</button>
+        </div>
+        <div class="scanner-corners"></div>
+
+        <div class="cam-controls">
+            <button class="cam-btn" id="flipBtn" onclick="ScanController.flipCamera()" aria-label="Flip camera">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </button>
+            <button class="cam-btn hidden" id="torchBtn" onclick="ScanController.toggleTorch()" aria-label="Toggle flashlight">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6l-6 6-6-6"/><path d="M6 6h12l-3 9H9z"/><line x1="12" y1="22" x2="12" y2="15"/></svg>
+            </button>
+        </div>
+
+        <div id="completeScreen" class="complete-ui" onclick="goNext()">
+            <div class="complete-check" id="completeCheck">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="complete-label">Location Scanned</div>
+            <div class="complete-cta">Pick Root Cause <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+    </div>
+
+    <div class="scanner-sub">
+        <button id="rescanBtn" class="btn-text-link hidden" onclick="ScanController.rescan()">Retry scan</button>
+        <button id="manualEntryBtn" class="btn-text-link" onclick="ScanController.openManual()">Enter manually</button>
+    </div>
+
+    <div class="id-card" id="idCard">
+        <div class="id-img-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="20" height="8" rx="2"/><line x1="6" y1="11" x2="6" y2="13"/><line x1="9" y1="11" x2="9" y2="13"/><line x1="12" y1="11" x2="12" y2="13"/><line x1="15" y1="11" x2="15" y2="13"/><line x1="18" y1="11" x2="18" y2="13"/></svg>
+        </div>
+        <div class="id-text">
+            <div class="id-label">Out-of-Shelf Barcode</div>
+            <div class="id-value" id="idValue">Awaiting scan…</div>
+        </div>
+        <div class="id-badge" id="idBadge">Pending</div>
+    </div>
+
+    <div class="nav-area">
+        <a href="scan_camera.html" class="btn-back-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
+        <button class="btn-next disabled" id="nextBtn" onclick="goNext()">Pick Root Cause <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+</div>
+
+<div class="manual-overlay" id="manualOverlay" onclick="if(event.target===this)ScanController.closeManual()">
+    <div class="manual-sheet">
+        <div class="manual-title" id="manualTitle">Enter Out-of-Shelf Code</div>
+        <div class="manual-sub" id="manualSub">Type the barcode for this out-of-shelf location.</div>
+        <input class="manual-input" id="manualInput" type="text" placeholder="Barcode" autocomplete="off" spellcheck="false">
+        <div class="manual-error" id="manualError"></div>
+        <div class="manual-actions">
+            <button class="manual-cancel" onclick="ScanController.closeManual()">Cancel</button>
+            <button class="manual-submit" onclick="ScanController.submitManual()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="app.js"></script>
+<script src="scanner.js"></script>
+<script>
+    Session.requireLogin();
+    if (!Session.get('cameraBarcode')) { window.location.href = 'scan_camera.html'; }
+
+    document.getElementById('avatarEl').textContent = Session.initials();
+    document.getElementById('cameraChip').textContent = Session.get('cameraBarcode', 'Camera');
+
+    document.getElementById('manualInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') ScanController.submitManual();
+        else if (e.key === 'Escape') ScanController.closeManual();
+    });
+
+    window.addEventListener('load', () => {
+        ScanController.init({
+            onComplete: (value) => {
+                Session.set('oosBarcode', value);
+                document.getElementById('nextBtn').classList.remove('disabled');
+            },
+            manualTitle: 'Enter Out-of-Shelf Code',
+            manualSub: 'Type the barcode for this out-of-shelf location.',
+            manualPlaceholder: 'Barcode',
+        });
+    });
+
+    function goNext() {
+        if (!Session.get('oosBarcode')) return;
+        window.location.href = 'root_cause.html';
+    }
+</script>
+</body>
+</html>

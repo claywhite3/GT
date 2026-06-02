@@ -1,0 +1,38 @@
+<svg viewBox="0 0 360 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Out-of-stock shelf slot with an ESL tag on the shelf edge to scan">
+  <!-- shelf unit outer frame -->
+  <rect x="24" y="14" width="312" height="172" rx="10" fill="#F9FAFB" stroke="#CBD5E1" stroke-width="2.5"/>
+  <!-- two shelves -->
+  <line x1="24" y1="100" x2="336" y2="100" stroke="#CBD5E1" stroke-width="2.5"/>
+  <rect x="24" y="100" width="312" height="7" fill="#E2E8F0"/>
+  <rect x="24" y="170" width="312" height="7" fill="#E2E8F0"/>
+
+  <!-- TOP shelf products: stocked left, EMPTY GAP centre, stocked right -->
+  <rect x="38"  y="58" width="26" height="42" rx="3" fill="#E5E9F0"/>
+  <rect x="68"  y="52" width="28" height="48" rx="3" fill="#E5E9F0"/>
+  <rect x="100" y="58" width="26" height="42" rx="3" fill="#E5E9F0"/>
+  <rect x="234" y="54" width="28" height="46" rx="3" fill="#E5E9F0"/>
+  <rect x="266" y="58" width="26" height="42" rx="3" fill="#E5E9F0"/>
+  <rect x="298" y="52" width="26" height="48" rx="3" fill="#E5E9F0"/>
+
+  <!-- EMPTY out-of-stock slot: white middle, dotted outline only -->
+  <rect x="138" y="54" width="84" height="46" rx="3" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- BOTTOM shelf products (all stocked, generic) -->
+  <rect x="40"  y="126" width="26" height="44" rx="3" fill="#E5E9F0"/>
+  <rect x="70"  y="122" width="28" height="48" rx="3" fill="#E5E9F0"/>
+  <rect x="102" y="128" width="26" height="42" rx="3" fill="#E5E9F0"/>
+  <rect x="150" y="124" width="28" height="46" rx="3" fill="#E5E9F0"/>
+  <rect x="182" y="128" width="26" height="42" rx="3" fill="#E5E9F0"/>
+  <rect x="232" y="122" width="28" height="48" rx="3" fill="#E5E9F0"/>
+  <rect x="264" y="128" width="26" height="42" rx="3" fill="#E5E9F0"/>
+  <rect x="296" y="124" width="26" height="46" rx="3" fill="#E5E9F0"/>
+
+  <!-- ESL TAG clipped to the shelf edge, in FRONT of the empty slot (no barcode) -->
+  <rect x="150" y="99" width="60" height="26" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="2"/>
+  <rect x="154" y="103" width="52" height="18" rx="1.5" fill="#F1F5F9"/>
+
+  <!-- highlight ring around the ESL tag + arrow pointing up to it -->
+  <rect x="144" y="94" width="72" height="38" rx="10" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-dasharray="5 5"/>
+  <path d="M180 168 L180 138" stroke="#F5A623" stroke-width="7" stroke-linecap="round"/>
+  <path d="M171 146 L180 135 L189 146" stroke="#F5A623" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
