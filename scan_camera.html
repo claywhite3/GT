@@ -38,11 +38,6 @@
         <div class="hero-sub">Scan the barcode on the camera to log which area and camera you're recording.</div>
     </div>
 
-    <div class="hint-card">
-        <img src="img/scan-camera-hint.svg" alt="Captana camera mounted on the front of a shelf">
-        <div class="hint-caption">Scan the barcode on the Captana camera</div>
-    </div>
-
     <div class="scanner-card" id="scannerBox">
         <div id="qrReader" class="qr-reader-mount"></div>
         <div id="cameraState" class="camera-state">
@@ -86,9 +81,17 @@
         <div class="id-badge" id="idBadge">Pending</div>
     </div>
 
+    <div class="hint-card">
+        <img src="img/scan-camera-hint.svg" alt="Captana camera mounted on the front of a shelf">
+        <div class="hint-caption">Scan the barcode on the Captana camera</div>
+    </div>
+
     <div class="nav-area">
-        <a href="store_select.html" class="btn-back-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
+        <a href="category.html" class="btn-back-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
         <button class="btn-next disabled" id="nextBtn" onclick="goNext()">Next <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+    <div class="quick-links">
+        <a href="category.html" class="quick-link">Change Category</a>
     </div>
 </div>
 
@@ -113,6 +116,16 @@
 <script src="app.js"></script>
 <script type="module" src="scanner.js"></script>
 <script>
+    // Surface ANY uncaught error (including scanner.js module load failures)
+    // to the on-screen log so we can diagnose on a phone.
+    window.addEventListener('error', function (e) {
+        var panel = document.getElementById('scanLog');
+        if (panel) {
+            panel.style.display = 'block';
+            panel.textContent += 'JS ERROR: ' + (e.message || e.error || 'unknown') +
+                (e.filename ? ' @ ' + e.filename.split('/').pop() + ':' + e.lineno : '') + '\n';
+        }
+    });
     Session.requireLogin();
     document.getElementById('avatarEl').textContent = Session.initials();
     document.getElementById('storeChip').textContent = Session.get('storeName', 'Store');
@@ -135,11 +148,26 @@
         if (!panel) return;
         panel.style.display = 'block';
         var keyLen = (window.SCANDIT_LICENSE_KEY || '').length;
-        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.17.2 · key length ' + keyLen + '\n';
-';
+        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.20.0 · key length ' + keyLen + '\n';
     })();
 
-    window.addEventListener('load', () => {
+    var scannerTries = 0;
+    function startScanner() {
+        if (typeof ScanController === 'undefined' || !window.ScanController) {
+            scannerTries++;
+            var panel = document.getElementById('scanLog');
+            if (panel && scannerTries % 10 === 1) {
+                panel.style.display = 'block';
+                panel.textContent += 'waiting for scanner module\u2026 (try ' + scannerTries + ')\n';
+            }
+            if (scannerTries > 100) {
+                if (panel) panel.textContent += 'ERROR: scanner module never loaded after 5s\n';
+                return;
+            }
+            return setTimeout(startScanner, 50);
+        }
+        var panel = document.getElementById('scanLog');
+        if (panel) { panel.style.display = 'block'; panel.textContent += 'module ready; calling init\n'; }
         ScanController.init({
             onComplete: (value) => {
                 scannedValue = value;
@@ -150,7 +178,8 @@
             manualSub: 'Type the code printed on the Captana camera.',
             manualPlaceholder: 'Camera ID',
         });
-    });
+    }
+    startScanner();
 
     function goNext() {
         if (!Session.get('cameraBarcode')) return;

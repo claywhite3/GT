@@ -109,6 +109,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         All Done with This Camera
     </button>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;">
+        <a href="#" onclick="saveAndNewCategory();return false;" style="font-size:13px;font-weight:700;color:#2563EB;text-decoration:none;">New Category</a>
+        <span style="color:#C5CAD3;font-weight:700;">·</span>
+        <a href="#" onclick="saveAndNewCamera();return false;" style="font-size:13px;font-weight:700;color:#2563EB;text-decoration:none;">New Camera</a>
+    </div>
 </div>
 
 <!-- Confirm dialog -->
@@ -182,6 +187,25 @@
         Session.del('oosBarcode');         // keep cameraBarcode, clear the OOS
         Session.del('classification');     // reset for the next issue
         window.location.href = 'scan_oos.html';
+    }
+
+    // Save this issue, then go change the category.
+    function saveAndNewCategory() {
+        if (!selectedCause) return;
+        persistCurrent();
+        Session.del('oosBarcode');
+        Session.del('classification');
+        window.location.href = 'category.html';
+    }
+
+    // Save this issue, then go scan a new camera.
+    function saveAndNewCamera() {
+        if (!selectedCause) return;
+        persistCurrent();
+        Session.del('oosBarcode');
+        Session.del('classification');
+        Session.del('cameraBarcode');
+        window.location.href = 'scan_camera.html';
     }
 
     function openConfirm() {

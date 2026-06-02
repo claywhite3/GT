@@ -8,15 +8,9 @@
       is set (see config.js) AND the SDK loads successfully.
    2. html5-qrcode                 (fallback) — used automatically if Scandit has
       no key or fails to load.
-
-   The public interface is identical for both engines, so the pages don't care
-   which one is running:
-     ScanController.init({ onComplete, manualTitle, manualSub, manualPlaceholder })
-     ScanController.flipCamera()  toggleTorch()  openManual()  closeManual()
-     ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.17.2';
+  const SCANNER_VERSION = 'scanner v0.20.0';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -24,23 +18,19 @@ const ScanController = (function () {
   let facingMode = 'environment';
   let torchOn = false;
 
-  // html5-qrcode state
   let html5QrCode = null;
   let currentTrack = null;
 
-  // Scandit state
   let sdcContext = null;
   let sdcView = null;
   let sdcBarcodeCapture = null;
   let sdcCamera = null;
-  let SDC = null;               // core module namespace
-  let SDCBarcode = null;        // barcode module namespace
+  let SDC = null;
+  let SDCBarcode = null;
 
   const successSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
   function $(id) { return document.getElementById(id); }
 
-  // Visible logging — writes to console AND to an on-screen #scanLog panel (if present)
-  // so we can diagnose Scandit on a phone where the console isn't accessible.
   function log(msg) {
     const line = '[scanner] ' + msg;
     console.log(line);
@@ -69,10 +59,14 @@ const ScanController = (function () {
     ];
   }
 
-  /* ---- shared lifecycle ------------------------------------------------- */
   async function init(options) {
-    opts = options || {};
-    log(SCANNER_VERSION + ' loaded');
+    options = options || {};
+    log(SCANNER_VERSION + ' init; onComplete=' + (typeof options.onComplete));
+    if (!options.onComplete && opts.onComplete) {
+      log('init called without onComplete; keeping existing one');
+      options.onComplete = opts.onComplete;
+    }
+    opts = options;
     if (opts.manualTitle) $('manualTitle').textContent = opts.manualTitle;
     if (opts.manualSub) $('manualSub').textContent = opts.manualSub;
     if (opts.manualPlaceholder) $('manualInput').placeholder = opts.manualPlaceholder;
@@ -95,7 +89,7 @@ const ScanController = (function () {
     starting = true;
     try {
       resetUiForStart();
-      await stop();   // tear down whatever was running
+      await stop();
 
       const key = (typeof window !== 'undefined' && window.SCANDIT_LICENSE_KEY) ? window.SCANDIT_LICENSE_KEY : '';
       if (key) {
@@ -127,6 +121,7 @@ const ScanController = (function () {
     const value = String(decodedText || '').trim();
     if (!value) { shake(); return; }
     scanCompleted = true;
+    log('handleSuccess: ' + value);
     complete(value);
   }
 
@@ -142,7 +137,6 @@ const ScanController = (function () {
   async function complete(value) {
     successSound.play().catch(() => {});
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    await stop();
 
     $('completeScreen').style.display = 'flex';
     $('rescanBtn').classList.remove('hidden');
@@ -155,7 +149,18 @@ const ScanController = (function () {
     const checkEl = $('completeCheck');
     if (checkEl) { checkEl.style.animation = 'none'; void checkEl.offsetWidth; checkEl.style.animation = ''; }
 
-    if (typeof opts.onComplete === 'function') opts.onComplete(value);
+    if (typeof opts.onComplete === 'function') {
+      log('firing onComplete for: ' + value);
+      try {
+        opts.onComplete(value);
+        const nb = document.getElementById('nextBtn');
+        log('nextBtn disabled now? ' + (nb ? nb.classList.contains('disabled') : 'no nextBtn'));
+      } catch (e) { log('onComplete error: ' + e); }
+    } else {
+      log('NO onComplete callback registered');
+    }
+
+    try { await stop(); } catch (e) { log('stop after complete failed: ' + e); }
   }
 
   /* ---- SCANDIT engine --------------------------------------------------- */
@@ -183,8 +188,6 @@ const ScanController = (function () {
     await sdcView.setContext(sdcContext);
 
     log('selecting camera\u2026');
-    // Pick the rear camera, but never let camera selection throw — fall back
-    // to the default camera if atPosition/CameraPosition isn't available.
     sdcCamera = null;
     try {
       if (Camera.atPosition && SDC.CameraPosition) {
@@ -203,8 +206,6 @@ const ScanController = (function () {
     await sdcContext.setFrameSource(sdcCamera);
     log('turning camera on\u2026');
     await sdcContext.frameSource.switchToDesiredState(FrameSourceState.On);
-    // First-run safety: after the permission prompt resolves, re-assert On in
-    // case the initial switch completed before access was granted.
     setTimeout(async () => {
       try {
         if (sdcContext && sdcContext.frameSource &&
@@ -235,16 +236,21 @@ const ScanController = (function () {
     sdcBarcodeCapture = await BarcodeCapture.forContext(sdcContext, settings);
     sdcBarcodeCapture.addListener({
       didScan: (mode, session) => {
-        const barcode = session.newlyRecognizedBarcode ||
-          (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes[0]);
-        if (!barcode) return;
-        handleSuccess(barcode.data || '');
+        log('didScan fired');
+        let barcode = null;
+        try {
+          barcode = session.newlyRecognizedBarcode
+            || (session.newlyRecognizedBarcodes && session.newlyRecognizedBarcodes[0]);
+        } catch (e) { log('barcode read error: ' + e); }
+        if (!barcode) { log('didScan: no barcode in session'); return; }
+        const data = (barcode.data != null ? barcode.data : (barcode.rawData || ''));
+        log('scanned: ' + data);
+        handleSuccess(String(data));
       },
     });
     await sdcBarcodeCapture.setEnabled(true);
     log('capture enabled');
 
-    // Reveal the torch button only if this camera actually supports it.
     try {
       const torchBtn = $('torchBtn');
       if (sdcCamera && sdcCamera.isTorchAvailable) {
@@ -325,7 +331,7 @@ const ScanController = (function () {
   /* ---- shared controls -------------------------------------------------- */
   async function flipCamera() {
     if (engine === 'scandit') {
-      const wantUser = (facingMode === 'environment');  // toggling to front?
+      const wantUser = (facingMode === 'environment');
       let cam = null;
       try {
         if (SDC.Camera.atPosition && SDC.CameraPosition) {
@@ -335,7 +341,7 @@ const ScanController = (function () {
       } catch (e) { log('flip atPosition failed: ' + (e && e.message ? e.message : e)); }
       if (!cam) {
         log('no ' + (wantUser ? 'front' : 'rear') + ' camera available');
-        return;   // keep current camera; don't go dark
+        return;
       }
       try {
         torchOn = false;
@@ -346,7 +352,6 @@ const ScanController = (function () {
         if (camSettings) await sdcCamera.applySettings(camSettings);
         await sdcContext.setFrameSource(sdcCamera);
         await sdcContext.frameSource.switchToDesiredState(SDC.FrameSourceState.On);
-        // Re-evaluate torch availability for the new camera.
         const torchBtn = $('torchBtn');
         if (sdcCamera.isTorchAvailable) torchBtn.classList.remove('hidden');
         else torchBtn.classList.add('hidden');
@@ -365,7 +370,6 @@ const ScanController = (function () {
     if (engine === 'scandit') {
       try {
         if (sdcCamera) {
-          // v8: set the camera's desiredTorchState property.
           sdcCamera.desiredTorchState = torchOn ? SDC.TorchState.On : SDC.TorchState.Off;
           $('torchBtn').classList.toggle('on', torchOn);
         }
@@ -408,6 +412,4 @@ const ScanController = (function () {
   };
 })();
 
-// scanner.js is loaded as a module, so its top-level binding is module-scoped.
-// Expose it globally so inline onclick handlers and page scripts can reach it.
 window.ScanController = ScanController;

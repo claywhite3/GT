@@ -77,7 +77,18 @@
         .overlay.open .sheet { transform: translateY(0); }
         .sheet-title { font-size: 18px; font-weight: 800; color: #111827; }
         .sheet-sub { font-size: 13px; color: #6B7280; margin-top: 4px; line-height: 1.5; }
-        .fp-input { width: 100%; margin-top: 16px; padding: 14px 16px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; color: #111827; outline: none; line-height: 1.5; resize: vertical; min-height: 96px; }
+        .fp-input { width: 100%; margin-top: 12px; padding: 14px 16px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; color: #111827; outline: none; line-height: 1.5; resize: vertical; min-height: 64px; }
+        .fp-reasons { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; max-height: 220px; overflow-y: auto; }
+        .fp-reason { display: flex; align-items: center; gap: 10px; background: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 12px 14px; cursor: pointer; text-align: left; width: 100%; font-family: 'DM Sans', sans-serif; transition: border-color .15s, background .15s; }
+        .fp-reason:active { transform: scale(.99); }
+        .fp-reason.selected { border-color: #EA580C; background: #FFF7ED; }
+        .fp-reason-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #D1D5DB; flex-shrink: 0; position: relative; }
+        .fp-reason.selected .fp-reason-radio { border-color: #EA580C; }
+        .fp-reason.selected .fp-reason-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #EA580C; }
+        .fp-reason-label { font-size: 13.5px; font-weight: 600; color: #374151; line-height: 1.3; }
+        .fp-reason-tag { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; padding: 2px 7px; border-radius: 20px; flex-shrink: 0; }
+        .fp-reason-tag.model { background: #DBEAFE; color: #1D4ED8; }
+        .fp-reason-tag.operational { background: #FEF3C7; color: #B45309; }
         .fp-input:focus { border-color: #EA580C; background: #fff; }
         .fp-error { font-size: 12px; font-weight: 600; color: #EF4444; margin-top: 6px; min-height: 14px; }
         .sheet-actions { display: flex; gap: 12px; margin-top: 16px; }
@@ -152,9 +163,10 @@
 <!-- False Positive text entry -->
 <div class="overlay" id="fpOverlay" onclick="if(event.target===this)closeFP()">
     <div class="sheet">
-        <div class="sheet-title">Describe the False Positive</div>
-        <div class="sheet-sub">This is a new category — tell us what the detection got wrong, in your own words.</div>
-        <textarea class="fp-input" id="fpInput" placeholder="e.g. Product was on the shelf but pushed back behind the shelf edge…"></textarea>
+        <div class="sheet-title">False Positive — pick a reason</div>
+        <div class="sheet-sub">Choose the closest reason, and add a note if helpful.</div>
+        <div class="fp-reasons" id="fpReasons"></div>
+        <textarea class="fp-input" id="fpInput" placeholder="Optional note (what you saw)…"></textarea>
         <div class="fp-error" id="fpError"></div>
         <div class="sheet-actions">
             <button class="sheet-cancel" onclick="closeFP()">Cancel</button>
@@ -207,28 +219,45 @@
         }
     }
 
-    // False Positive — open text entry
+    // False Positive — open reason picker + optional note
+    let fpReason = null;
+    function renderFpReasons() {
+        const wrap = document.getElementById('fpReasons');
+        wrap.innerHTML = FP_REASON_DEFS.map((r, i) =>
+            `<button class="fp-reason${fpReason === r.label ? ' selected' : ''}" onclick="pickFpReason(${i})">
+                <span class="fp-reason-radio"></span>
+                <span class="fp-reason-label">${r.label}</span>
+                <span class="fp-reason-tag ${r.type.toLowerCase()}">${r.type}</span>
+            </button>`
+        ).join('');
+    }
+    function pickFpReason(i) {
+        fpReason = FP_REASON_DEFS[i].label;
+        document.getElementById('fpError').textContent = '';
+        renderFpReasons();
+    }
     function openFP() {
         const o = document.getElementById('fpOverlay');
+        fpReason = null;
         document.getElementById('fpInput').value = '';
         document.getElementById('fpError').textContent = '';
+        renderFpReasons();
         o.classList.add('open');
-        setTimeout(() => document.getElementById('fpInput').focus(), 60);
     }
     function closeFP() { document.getElementById('fpOverlay').classList.remove('open'); }
 
     function saveFP() {
-        const text = document.getElementById('fpInput').value.trim();
-        if (!text) {
-            document.getElementById('fpError').textContent = 'Please describe what happened.';
+        if (!fpReason) {
+            document.getElementById('fpError').textContent = 'Please pick a reason.';
             return;
         }
+        const note = document.getElementById('fpInput').value.trim();
         closeFP();
-        // Stash the FP details and go to the confirmation page (which saves +
-        // offers Next Issue / All Done). Navigating to a real page also gives
-        // the background flush time to complete.
+        // rootCause stores the reason; the note (if any) is appended in parens.
+        const detail = note ? (fpReason + ' \u2014 ' + note) : fpReason;
         Session.set('pendingClassification', 'False Positive');
-        Session.set('pendingNote', text);
+        Session.set('pendingNote', detail);
+        Session.set('pendingReason', fpReason);
         window.location.href = 'saved.html';
     }
 

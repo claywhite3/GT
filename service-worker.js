@@ -1,10 +1,13 @@
 /* Service worker — caches the app shell so the PWA works offline.
    Bump CACHE_VERSION whenever you change any cached file. */
-const CACHE_VERSION = 'gt-v22';
+const CACHE_VERSION = 'gt-v32';
 const SHELL = [
   'index.html',
   'store_type.html',
   'store_select.html',
+  'flow_picker.html',
+  'view_data.html',
+  'category.html',
   'scan_camera.html',
   'scan_oos.html',
   'classify.html',

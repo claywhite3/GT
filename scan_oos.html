@@ -38,11 +38,6 @@
         <div class="hero-sub">Scan the barcode for this out-of-shelf location, then pick its root cause.</div>
     </div>
 
-    <div class="hint-card">
-        <img src="img/scan-oos-hint.svg" alt="Out-of-stock shelf slot with an ESL tag on the shelf edge to scan">
-        <div class="hint-caption">Scan the ESL tag on the shelf edge of the empty slot</div>
-    </div>
-
     <div class="scanner-card" id="scannerBox">
         <div id="qrReader" class="qr-reader-mount"></div>
         <div id="cameraState" class="camera-state">
@@ -86,6 +81,11 @@
         <div class="id-badge" id="idBadge">Pending</div>
     </div>
 
+    <div class="hint-card">
+        <img src="img/scan-oos-hint.svg" alt="Out-of-stock shelf slot with an ESL tag on the shelf edge to scan">
+        <div class="hint-caption">Scan the ESL tag on the shelf edge of the empty slot</div>
+    </div>
+
     <div class="nav-area">
         <a href="scan_camera.html" class="btn-back-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
         <button class="btn-next disabled" id="nextBtn" onclick="goNext()">Classify <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
@@ -96,6 +96,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             All Done with This Camera
         </button>
+        <div class="quick-links">
+            <a href="category.html" class="quick-link">New Category</a>
+            <span class="quick-sep">·</span>
+            <a href="scan_camera.html" class="quick-link">New Camera</a>
+        </div>
     </div>
 </div>
 
@@ -146,11 +151,13 @@
         if (!panel) return;
         panel.style.display = 'block';
         var keyLen = (window.SCANDIT_LICENSE_KEY || '').length;
-        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.17.2 · key length ' + keyLen + '\n';
-';
+        panel.textContent += new Date().toISOString().slice(11,19) + '  page loaded · v0.20.0 · key length ' + keyLen + '\n';
     })();
 
-    window.addEventListener('load', () => {
+    function startScanner() {
+        if (typeof ScanController === 'undefined' || !window.ScanController) {
+            return setTimeout(startScanner, 50);
+        }
         ScanController.init({
             onComplete: (value) => {
                 Session.set('oosBarcode', value);
@@ -160,7 +167,8 @@
             manualSub: 'Type the barcode for this out-of-shelf location.',
             manualPlaceholder: 'Barcode',
         });
-    });
+    }
+    startScanner();
 
     function goNext() {
         if (!Session.get('oosBarcode')) return;

@@ -127,3 +127,9 @@ body { font-family: 'DM Sans', sans-serif; background-color: #F2F3F7; min-height
 .done-actions { display: flex; gap: 10px; margin-top: 22px; }
 .done-cancel { flex: 1; padding: 14px; background: #F3F4F6; color: #374151; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; }
 .done-ok { flex: 1; padding: 14px; background: #16A34A; color: #fff; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(22,163,74,0.3); }
+
+/* Quick links under the scan pages (New Category / New Camera) */
+.quick-links { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; }
+.quick-link { font-size: 13px; font-weight: 700; color: #2563EB; text-decoration: none; padding: 6px 4px; }
+.quick-link:active { opacity: .6; }
+.quick-sep { color: #C5CAD3; font-weight: 700; }

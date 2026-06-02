@@ -52,21 +52,57 @@ const STORES_BY_TYPE = {
   ],
 };
 
-/* ---- ROOT CAUSES ------------------------------------------------------- */
-// From the supplied list (percentages were sample data and are omitted).
-const ROOT_CAUSES = [
-  'Neighbouring product drifted into slot',
-  'Detection picking up adjacent slot product',
-  'Planogram changes after Blink ID',
-  'Model can\u2019t recognise pallet / down arrows',
-  'Camera moved, missing, or blind spot',
-  'Slot not photographed (no camera coverage)',
-  'Obstruction in front of shelf',
-  'Outdated snapshot',
-  'Captana failed to detect (underdetection)',
-  'ESL not on correct shelf edge',
-  'Detection picking up packaging, not SKU',
+/* ---- PRODUCT CATEGORIES ------------------------------------------------ */
+// From the Sainsbury's audit Reference sheet.
+const PRODUCT_CATEGORIES = [
+  'Ambient Grocery',
+  'Frozen',
+  'Fresh Produce',
+  'Chilled',
+  'Bakery',
+  'Beers, Wines & Spirits',
+  'Household & Toiletries',
+  'Health & Beauty',
+  'Other',
 ];
+
+/* ---- ROOT CAUSES (False Negative reasons) ------------------------------ */
+// Each reason is tagged Model or Operational. That tag drives the analytics:
+// headline recall/precision EXCLUDE operational issues (Captana methodology).
+const ROOT_CAUSE_DEFS = [
+  { label: 'Neighbouring product drifted into slot', type: 'Operational' },
+  { label: 'Detection picking up adjacent slot product', type: 'Model' },
+  { label: 'Planogram changes after Blink ID', type: 'Operational' },
+  { label: 'Model can\u2019t recognise pallet / down arrows', type: 'Model' },
+  { label: 'Camera moved, missing, or blind spot', type: 'Operational' },
+  { label: 'Slot not photographed (no camera coverage)', type: 'Operational' },
+  { label: 'Obstruction in front of shelf', type: 'Operational' },
+  { label: 'Outdated snapshot', type: 'Operational' },
+  { label: 'Captana failed to detect (underdetection)', type: 'Model' },
+  { label: 'ESL not on correct shelf edge', type: 'Operational' },
+  { label: 'Detection picking up packaging, not SKU', type: 'Model' },
+  { label: 'ESL Alignment', type: 'Operational' },
+  { label: 'Product Misplaced', type: 'Operational' },
+];
+// Plain label list (root_cause page renders from this).
+const ROOT_CAUSES = ROOT_CAUSE_DEFS.map(r => r.label);
+
+/* ---- FALSE POSITIVE reasons -------------------------------------------- */
+const FP_REASON_DEFS = [
+  { label: 'Over-detection (gap flagged where stock present)', type: 'Model' },
+  { label: 'Dress task / shelf restocked before audit', type: 'Operational' },
+  { label: 'Packaging left in front of empty slot', type: 'Operational' },
+  { label: 'Product in packaging/case, top failed to detect', type: 'Operational' },
+];
+const FP_REASONS = FP_REASON_DEFS.map(r => r.label);
+
+// Look up the Model/Operational tag for any reason label (FN or FP).
+function reasonType(label) {
+  if (!label) return '';
+  const all = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
+  const hit = all.find(r => r.label === label);
+  return hit ? hit.type : '';
+}
 
 /* ---- SESSION HELPERS --------------------------------------------------- */
 const Session = {
@@ -112,10 +148,12 @@ const Records = {
       email: Session.get('email'),
       storeType: Session.get('storeTypeName'),
       storeAddress: (Session.get('storeName') + ' \u2014 ' + Session.get('storeAddr')).trim(),
+      category: Session.get('category') || '',
       cameraBarcode: Session.get('cameraBarcode'),
       outOfShelfBarcode: outOfShelfBarcode || '',
       classification: classification || '',
       rootCause: rootCause || '',
+      reasonType: reasonType(rootCause || ''),
     };
   },
 };
@@ -224,6 +262,19 @@ async function pushToBackend(record) {
   });
   // With no-cors we can't read the response; assume success if no throw.
   return true;
+}
+
+/*
+   fetchRecords() -> Promise<Array>  reads all rows from the sheet via doGet.
+   The Apps Script doGet returns JSON {ok, rows}. This is a normal (CORS) GET,
+   so we CAN read the response (unlike the no-cors write path).
+*/
+async function fetchRecords() {
+  if (!GOOGLE_SHEET_ENDPOINT) return [];
+  const res = await fetch(GOOGLE_SHEET_ENDPOINT, { method: 'GET' });
+  const data = await res.json();
+  if (!data || !data.ok) throw new Error((data && data.error) || 'fetch failed');
+  return data.rows || [];
 }
 
 /* Try to flush any leftover records whenever the app loads + regains network. */
