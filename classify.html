@@ -193,22 +193,12 @@
         document.getElementById('continueBtn').classList.remove('disabled');
     }
 
-    // queue the record (instant) and loop back to scan another out-of-shelf
-    function queueAndLoop(classification, rootCause) {
-        const record = Records.build({
-            outOfShelfBarcode: Session.get('oosBarcode'),
-            classification: classification,
-            rootCause: rootCause || '',
-        });
-        queueRecord(record);            // non-blocking, syncs in background
-        Session.del('oosBarcode');
-        window.location.href = 'scan_oos.html';
-    }
-
     function proceed() {
         if (!selected) return;
         if (selected === 'tp') {
-            queueAndLoop('True Positive', '');
+            Session.set('pendingClassification', 'True Positive');
+            Session.set('pendingNote', '');
+            window.location.href = 'saved.html';
         } else if (selected === 'fn') {
             Session.set('classification', 'False Negative');
             window.location.href = 'root_cause.html';
@@ -234,7 +224,12 @@
             return;
         }
         closeFP();
-        queueAndLoop('False Positive', text);
+        // Stash the FP details and go to the confirmation page (which saves +
+        // offers Next Issue / All Done). Navigating to a real page also gives
+        // the background flush time to complete.
+        Session.set('pendingClassification', 'False Positive');
+        Session.set('pendingNote', text);
+        window.location.href = 'saved.html';
     }
 
     document.getElementById('fpInput').addEventListener('keydown', e => {

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+    <title>Captana — Saved</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'DM Sans', sans-serif; background: #F2F3F7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; color: #111827; }
+        .shell { width: 100%; max-width: 390px; min-height: 100vh; background: #F2F3F7; display: flex; flex-direction: column; padding-bottom: 168px; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px 20px 8px; }
+        .top-bar-right { display: flex; align-items: center; gap: 8px; }
+        .context-chip { background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; padding: 6px 10px; font-size: 13px; font-weight: 800; color: #2563EB; line-height: 1; min-height: 28px; display: flex; align-items: center; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .avatar { width: 40px; height: 40px; background: #2563EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+
+        .confirm-wrap { padding: 40px 24px 0; display: flex; flex-direction: column; align-items: center; text-align: center; animation: fadeUp .4s ease both; }
+        .tick { width: 84px; height: 84px; border-radius: 50%; background: #DCFCE7; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pop .35s ease both; }
+        .tick svg { width: 44px; height: 44px; color: #16A34A; }
+        .confirm-title { font-size: 24px; font-weight: 800; color: #111827; }
+        .confirm-sub { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 6px; line-height: 1.5; }
+
+        .summary { width: 100%; margin-top: 26px; background: #fff; border-radius: 16px; padding: 4px 18px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid #F1F2F5; }
+        .summary-row:last-child { border-bottom: none; }
+        .summary-label { font-size: 12px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0; }
+        .summary-val { font-size: 14px; font-weight: 700; color: #111827; text-align: right; word-break: break-word; }
+        .summary-val.mono { font-family: monospace; letter-spacing: .5px; }
+        .pill { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+        .pill.tp { background: #DCFCE7; color: #16A34A; }
+        .pill.fp { background: #FFEDD5; color: #EA580C; }
+
+        .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; background: #fff; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); border-top: 1px solid #F3F4F6; }
+        .nav-row { display: flex; gap: 12px; }
+        .btn-back { padding: 15px 20px; background: #fff; color: #6B7280; border: 1.5px solid #E5E7EB; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform .15s; flex-shrink: 0; }
+        .btn-back:active { transform: scale(.975); }
+        .btn-back svg { width: 16px; height: 16px; }
+        .btn-next-issue { flex: 1; padding: 15px; background: #2563EB; color: #fff; border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(37,99,235,0.3); transition: transform .15s; }
+        .btn-next-issue:active { transform: scale(.975); }
+        .btn-next-issue svg { width: 18px; height: 18px; }
+        .btn-alldone { width: 100%; margin-top: 10px; padding: 14px; background: #fff; color: #16A34A; border: 1.5px solid #BBF7D0; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform .15s, background .15s; }
+        .btn-alldone:active { transform: scale(.985); background: #F0FDF4; }
+        .btn-alldone svg { width: 17px; height: 17px; }
+
+        /* Confirm dialog for All Done */
+        .dialog-overlay { position: fixed; inset: 0; background: rgba(17,24,39,0.45); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity .2s; padding: 24px; }
+        .dialog-overlay.open { opacity: 1; pointer-events: auto; }
+        .dialog { width: 100%; max-width: 320px; background: #fff; border-radius: 22px; padding: 26px 22px 20px; text-align: center; transform: scale(.94); transition: transform .2s; }
+        .dialog-overlay.open .dialog { transform: scale(1); }
+        .dialog-icon { width: 56px; height: 56px; margin: 0 auto 14px; background: #F0FDF4; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .dialog-icon svg { width: 28px; height: 28px; color: #16A34A; }
+        .dialog-title { font-size: 19px; font-weight: 800; color: #111827; }
+        .dialog-text { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 6px; line-height: 1.5; }
+        .dialog-actions { display: flex; gap: 10px; margin-top: 22px; }
+        .dialog-cancel { flex: 1; padding: 14px; background: #F3F4F6; color: #374151; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .dialog-ok { flex: 1; padding: 14px; background: #16A34A; color: #fff; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(22,163,74,0.3); }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="top-bar">
+        <div style="width:38px;"></div>
+        <div class="top-bar-right">
+            <div class="context-chip" id="cameraChip">Camera</div>
+            <div class="avatar" id="avatarEl">GT</div>
+        </div>
+    </div>
+
+    <div class="confirm-wrap">
+        <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="confirm-title">Issue Saved</div>
+        <div class="confirm-sub">What would you like to do next?</div>
+
+        <div class="summary">
+            <div class="summary-row">
+                <span class="summary-label">Out of Shelf</span>
+                <span class="summary-val mono" id="sumOos">—</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Classification</span>
+                <span class="summary-val" id="sumClass">—</span>
+            </div>
+            <div class="summary-row" id="noteRow" style="display:none;">
+                <span class="summary-label">FP Note</span>
+                <span class="summary-val" id="sumNote">—</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-bar">
+    <div class="nav-row">
+        <button class="btn-back" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
+        <button class="btn-next-issue" onclick="nextIssue()">Next Issue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+    <button class="btn-alldone" onclick="openConfirm()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        All Done with This Camera
+    </button>
+</div>
+
+<div class="dialog-overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
+    <div class="dialog">
+        <div class="dialog-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <div class="dialog-title">All done with this camera?</div>
+        <div class="dialog-text">This takes you back to scan the next camera.</div>
+        <div class="dialog-actions">
+            <button class="dialog-cancel" onclick="closeConfirm()">Not yet</button>
+            <button class="dialog-ok" onclick="finishCamera()">OK, done</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    Session.requireLogin();
+    if (!Session.get('cameraBarcode') || !Session.get('pendingClassification')) {
+        window.location.href = 'scan_camera.html';
+    }
+
+    document.getElementById('avatarEl').textContent = Session.initials();
+    document.getElementById('cameraChip').textContent = Session.get('cameraBarcode', 'Camera');
+
+    const cls = Session.get('pendingClassification');
+    const note = Session.get('pendingNote');
+    const oos = Session.get('oosBarcode');
+
+    // Save the record now, on a stable page load (so the background flush
+    // actually completes and reaches the sheet).
+    (function saveNow() {
+        const record = Records.build({
+            outOfShelfBarcode: oos,
+            classification: cls,
+            rootCause: note || '',
+        });
+        queueRecord(record);
+    })();
+
+    // Populate the summary
+    document.getElementById('sumOos').textContent = oos || '\u2014';
+    const clsEl = document.getElementById('sumClass');
+    if (cls === 'True Positive') {
+        clsEl.innerHTML = '<span class="pill tp">True Positive</span>';
+    } else if (cls === 'False Positive') {
+        clsEl.innerHTML = '<span class="pill fp">False Positive</span>';
+        document.getElementById('noteRow').style.display = 'flex';
+        document.getElementById('sumNote').textContent = note || '\u2014';
+    } else {
+        clsEl.textContent = cls || '\u2014';
+    }
+
+    function clearPending() {
+        Session.del('pendingClassification');
+        Session.del('pendingNote');
+        Session.del('oosBarcode');
+    }
+
+    // Next Issue — scan another out-of-shelf for the SAME camera
+    function nextIssue() {
+        clearPending();
+        window.location.href = 'scan_oos.html';
+    }
+
+    // Back — return to the classify page for this same out-of-shelf.
+    // (The record is already saved; this is for picking a different action.)
+    function goBack() {
+        Session.del('pendingClassification');
+        Session.del('pendingNote');
+        window.location.href = 'classify.html';
+    }
+
+    function openConfirm() { document.getElementById('confirmOverlay').classList.add('open'); }
+    function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
+
+    // All Done — back to the camera page for a new camera
+    function finishCamera() {
+        clearPending();
+        Session.del('cameraBarcode');
+        window.location.href = 'scan_camera.html';
+    }
+</script>
+</body>
+</html>
