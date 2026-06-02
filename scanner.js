@@ -16,7 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.17.1';
+  const SCANNER_VERSION = 'scanner v0.17.2';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -183,9 +183,20 @@ const ScanController = (function () {
     await sdcView.setContext(sdcContext);
 
     log('selecting camera\u2026');
-    // Track current facing so flip can toggle reliably.
-    const worldCam = Camera.atPosition(SDC.CameraPosition.WorldFacing);
-    sdcCamera = worldCam || (Camera.pickBestGuess ? Camera.pickBestGuess() : Camera.default);
+    // Pick the rear camera, but never let camera selection throw — fall back
+    // to the default camera if atPosition/CameraPosition isn't available.
+    sdcCamera = null;
+    try {
+      if (Camera.atPosition && SDC.CameraPosition) {
+        sdcCamera = Camera.atPosition(SDC.CameraPosition.WorldFacing);
+      }
+    } catch (e) { log('atPosition unavailable: ' + (e && e.message ? e.message : e)); }
+    if (!sdcCamera) {
+      sdcCamera = (Camera.default !== undefined) ? Camera.default
+                : (Camera.pickBestGuess ? Camera.pickBestGuess() : null);
+      log('using default camera');
+    }
+    if (!sdcCamera) throw new Error('no camera available');
     facingMode = 'environment';
     const camSettings = BarcodeCapture.recommendedCameraSettings;
     if (sdcCamera && camSettings) await sdcCamera.applySettings(camSettings);
@@ -315,10 +326,15 @@ const ScanController = (function () {
   async function flipCamera() {
     if (engine === 'scandit') {
       const wantUser = (facingMode === 'environment');  // toggling to front?
-      const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
-      const cam = SDC.Camera.atPosition(pos);
+      let cam = null;
+      try {
+        if (SDC.Camera.atPosition && SDC.CameraPosition) {
+          const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
+          cam = SDC.Camera.atPosition(pos);
+        }
+      } catch (e) { log('flip atPosition failed: ' + (e && e.message ? e.message : e)); }
       if (!cam) {
-        log('no ' + (wantUser ? 'front' : 'rear') + ' camera on this device');
+        log('no ' + (wantUser ? 'front' : 'rear') + ' camera available');
         return;   // keep current camera; don't go dark
       }
       try {
