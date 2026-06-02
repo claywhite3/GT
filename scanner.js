@@ -16,7 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.16.1';
+  const SCANNER_VERSION = 'scanner v0.17.0';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -183,12 +183,26 @@ const ScanController = (function () {
     await sdcView.setContext(sdcContext);
 
     log('selecting camera\u2026');
-    sdcCamera = Camera.pickBestGuess ? Camera.pickBestGuess() : Camera.default;
+    // Track current facing so flip can toggle reliably.
+    const worldCam = Camera.atPosition(SDC.CameraPosition.WorldFacing);
+    sdcCamera = worldCam || (Camera.pickBestGuess ? Camera.pickBestGuess() : Camera.default);
+    facingMode = 'environment';
     const camSettings = BarcodeCapture.recommendedCameraSettings;
     if (sdcCamera && camSettings) await sdcCamera.applySettings(camSettings);
     await sdcContext.setFrameSource(sdcCamera);
     log('turning camera on\u2026');
     await sdcContext.frameSource.switchToDesiredState(FrameSourceState.On);
+    // First-run safety: after the permission prompt resolves, re-assert On in
+    // case the initial switch completed before access was granted.
+    setTimeout(async () => {
+      try {
+        if (sdcContext && sdcContext.frameSource &&
+            sdcContext.frameSource.currentState !== FrameSourceState.On) {
+          await sdcContext.frameSource.switchToDesiredState(FrameSourceState.On);
+          log('re-asserted camera On');
+        }
+      } catch (e) {}
+    }, 1200);
 
     const settings = new BarcodeCaptureSettings();
     const wanted = [
@@ -218,6 +232,18 @@ const ScanController = (function () {
     });
     await sdcBarcodeCapture.setEnabled(true);
     log('capture enabled');
+
+    // Reveal the torch button only if this camera actually supports it.
+    try {
+      const torchBtn = $('torchBtn');
+      if (sdcCamera && sdcCamera.isTorchAvailable) {
+        torchBtn.classList.remove('hidden');
+        log('torch available');
+      } else {
+        torchBtn.classList.add('hidden');
+        log('torch not available on this camera');
+      }
+    } catch (e) { log('torch check failed: ' + e); }
   }
 
   async function stopScandit() {
@@ -287,23 +313,33 @@ const ScanController = (function () {
 
   /* ---- shared controls -------------------------------------------------- */
   async function flipCamera() {
-    facingMode = (facingMode === 'environment') ? 'user' : 'environment';
-    torchOn = false;
-    $('torchBtn').classList.add('hidden');
     if (engine === 'scandit') {
+      const wantUser = (facingMode === 'environment');  // toggling to front?
+      const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
+      const cam = SDC.Camera.atPosition(pos);
+      if (!cam) {
+        log('no ' + (wantUser ? 'front' : 'rear') + ' camera on this device');
+        return;   // keep current camera; don't go dark
+      }
       try {
-        const pos = (facingMode === 'user')
-          ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
-        const cam = SDC.Camera.atPosition(pos) || sdcCamera;
-        if (cam) {
-          sdcCamera = cam;
-          const camSettings = SDCBarcode.BarcodeCapture.recommendedCameraSettings;
-          if (camSettings) await sdcCamera.applySettings(camSettings);
-          await sdcContext.setFrameSource(sdcCamera);
-          await sdcContext.frameSource.switchToDesiredState(SDC.FrameSourceState.On);
-        }
-      } catch (e) { console.warn('[scanner] flip failed:', e); }
+        torchOn = false;
+        $('torchBtn').classList.remove('on');
+        sdcCamera = cam;
+        facingMode = wantUser ? 'user' : 'environment';
+        const camSettings = SDCBarcode.BarcodeCapture.recommendedCameraSettings;
+        if (camSettings) await sdcCamera.applySettings(camSettings);
+        await sdcContext.setFrameSource(sdcCamera);
+        await sdcContext.frameSource.switchToDesiredState(SDC.FrameSourceState.On);
+        // Re-evaluate torch availability for the new camera.
+        const torchBtn = $('torchBtn');
+        if (sdcCamera.isTorchAvailable) torchBtn.classList.remove('hidden');
+        else torchBtn.classList.add('hidden');
+        log('switched to ' + (wantUser ? 'front' : 'rear') + ' camera');
+      } catch (e) { log('flip failed: ' + (e && e.message ? e.message : e)); }
     } else {
+      facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+      torchOn = false;
+      $('torchBtn').classList.add('hidden');
       await start();
     }
   }
@@ -312,12 +348,12 @@ const ScanController = (function () {
     torchOn = !torchOn;
     if (engine === 'scandit') {
       try {
-        const desired = torchOn ? SDC.TorchState.On : SDC.TorchState.Off;
-        if (sdcCamera && sdcCamera.setDesiredTorchState) {
-          await sdcCamera.setDesiredTorchState(desired);
+        if (sdcCamera) {
+          // v8: set the camera's desiredTorchState property.
+          sdcCamera.desiredTorchState = torchOn ? SDC.TorchState.On : SDC.TorchState.Off;
           $('torchBtn').classList.toggle('on', torchOn);
         }
-      } catch (e) { torchOn = !torchOn; }
+      } catch (e) { torchOn = !torchOn; log('torch toggle failed: ' + e); }
     } else {
       if (!currentTrack) { torchOn = !torchOn; return; }
       try {
