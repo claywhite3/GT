@@ -55,7 +55,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div class="complete-label">Location Scanned</div>
-            <div class="complete-cta">Pick Root Cause <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+            <div class="complete-cta">Classify <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
         </div>
     </div>
 
@@ -77,7 +77,7 @@
 
     <div class="nav-area">
         <a href="scan_camera.html" class="btn-back-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
-        <button class="btn-next disabled" id="nextBtn" onclick="goNext()">Pick Root Cause <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+        <button class="btn-next disabled" id="nextBtn" onclick="goNext()">Classify <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
 </div>
 
@@ -123,7 +123,7 @@
 
     function goNext() {
         if (!Session.get('oosBarcode')) return;
-        window.location.href = 'root_cause.html';
+        window.location.href = 'classify.html';
     }
 </script>
 </body>

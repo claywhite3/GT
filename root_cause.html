@@ -79,7 +79,7 @@
 <body>
 <div class="shell">
     <div class="top-bar">
-        <a href="scan_oos.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <a href="classify.html" class="back-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
         <div class="top-bar-right">
             <div class="context-chip" id="cameraChip">Camera</div>
             <div class="avatar" id="avatarEl">GT</div>
@@ -87,7 +87,7 @@
     </div>
 
     <div class="hero">
-        <div class="eyebrow">Step 3 — Root Cause</div>
+        <div class="eyebrow">Step 4 — Root Cause</div>
         <div class="hero-title">What's the Root Cause?</div>
         <div class="hero-sub">Select the single best reason for this out-of-shelf.</div>
     </div>
@@ -102,7 +102,7 @@
 
 <div class="bottom-bar">
     <div class="nav-row">
-        <a href="scan_oos.html" class="btn-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
+        <a href="classify.html" class="btn-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</a>
         <button class="btn-next-issue disabled" id="nextIssueBtn" onclick="saveAndNextIssue()">Next Issue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
     <button class="btn-alldone disabled" id="allDoneBtn" onclick="openConfirm()">
@@ -169,6 +169,7 @@
     async function persistCurrent() {
         const record = Records.build({
             outOfShelfBarcode: Session.get('oosBarcode'),
+            classification: Session.get('classification') || 'False Negative',
             rootCause: selectedCause,
         });
         const res = await saveRecord(record);
@@ -179,7 +180,8 @@
     async function saveAndNextIssue() {
         if (!selectedCause) return;
         await persistCurrent();
-        Session.del('oosBarcode');     // keep cameraBarcode, clear the OOS
+        Session.del('oosBarcode');         // keep cameraBarcode, clear the OOS
+        Session.del('classification');     // reset for the next issue
         setTimeout(() => { window.location.href = 'scan_oos.html'; }, 350);
     }
 
@@ -195,6 +197,7 @@
     async function saveAndFinishCamera() {
         await persistCurrent();
         Session.del('oosBarcode');
+        Session.del('classification');
         Session.del('cameraBarcode');
         setTimeout(() => { window.location.href = 'scan_camera.html'; }, 350);
     }

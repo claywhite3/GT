@@ -105,7 +105,7 @@ const Records = {
   },
 
   // Build a record from current session + the issue specifics.
-  build({ outOfShelfBarcode, rootCause }) {
+  build({ outOfShelfBarcode, classification, rootCause }) {
     return {
       timestamp: new Date().toISOString(),
       email: Session.get('email'),
@@ -113,6 +113,7 @@ const Records = {
       storeAddress: (Session.get('storeName') + ' \u2014 ' + Session.get('storeAddr')).trim(),
       cameraBarcode: Session.get('cameraBarcode'),
       outOfShelfBarcode: outOfShelfBarcode || '',
+      classification: classification || '',
       rootCause: rootCause || '',
     };
   },
