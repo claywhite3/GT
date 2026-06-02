@@ -1,6 +1,6 @@
 /* Service worker — caches the app shell so the PWA works offline.
    Bump CACHE_VERSION whenever you change any cached file. */
-const CACHE_VERSION = 'gt-v20';
+const CACHE_VERSION = 'gt-v21';
 const SHELL = [
   'index.html',
   'store_type.html',
@@ -39,19 +39,9 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;        // never cache POSTs to the sheet
   const url = new URL(req.url);
 
-  // Cache-first for our own shell files.
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(req).then((hit) => hit || fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
-        return res;
-      }).catch(() => hit))
-    );
-    return;
-  }
-
-  // Network-first for cross-origin (fonts, scanner CDN), falling back to cache.
+  // Network-first for everything (own files + cross-origin): always try to
+  // fetch the latest when online, fall back to cache when offline. This
+  // prevents stale cached code (e.g. an old scanner.js) from masking deploys.
   event.respondWith(
     fetch(req).then((res) => {
       const copy = res.clone();

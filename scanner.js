@@ -16,7 +16,7 @@
      ScanController.submitManual()  rescan()  retry()  stop()
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.17.0';
+  const SCANNER_VERSION = 'scanner v0.17.1';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
