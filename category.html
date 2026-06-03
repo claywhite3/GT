@@ -27,11 +27,10 @@
         .hero-sub { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 6px; line-height: 1.5; }
 
         .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .cat-card { display: flex; align-items: center; gap: 10px; background: #fff; border: 2px solid transparent; border-radius: 16px; padding: 16px 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(17,24,39,0.06); transition: transform .12s, border-color .16s, box-shadow .16s; animation: fadeUp .35s ease both; text-align: left; min-height: 60px; }
+        .cat-card { display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid #DBE4FF; border-radius: 16px; padding: 18px 16px; cursor: pointer; box-shadow: 0 3px 10px rgba(17,24,39,0.10); transition: transform .12s, border-color .16s, box-shadow .16s; animation: fadeUp .35s ease both; text-align: left; min-height: 64px; }
         .cat-card:active { transform: scale(.97); }
-        .cat-card.selected { border-color: #2563EB; box-shadow: 0 4px 14px rgba(37,99,235,0.18); }
-        .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: #2563EB; }
-        .cat-name { font-size: 14px; font-weight: 700; color: #111827; line-height: 1.2; }
+        .cat-card.selected { border-color: #2563EB; border-width: 2px; box-shadow: 0 5px 16px rgba(37,99,235,0.22); }
+        .cat-name { font-size: 16px; font-weight: 700; color: #111827; line-height: 1.25; }
         .cat-card.selected .cat-name { color: #2563EB; }
 
         .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 390px; background: #fff; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.08); border-top: 1px solid #F3F4F6; }
@@ -78,7 +77,6 @@
         const grid = document.getElementById('catGrid');
         grid.innerHTML = PRODUCT_CATEGORIES.map(cat =>
             `<button class="cat-card${selected === cat ? ' selected' : ''}" onclick="pick('${cat.replace(/'/g, "\\'")}')">
-                <span class="cat-dot"></span>
                 <span class="cat-name">${cat}</span>
             </button>`
         ).join('');

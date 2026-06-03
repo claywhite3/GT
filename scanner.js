@@ -10,7 +10,7 @@
       no key or fails to load.
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.20.0';
+  const SCANNER_VERSION = 'scanner v0.21.0';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -179,6 +179,10 @@ const ScanController = (function () {
     sdcView = new DataCaptureView();
     sdcView.connectToElement(mount);
     log('view mounted; creating context (loading WASM)\u2026');
+    try {
+      const st = $('cameraStateText');
+      if (st) st.textContent = 'Loading scanner\u2026 (first launch can take a few seconds)';
+    } catch (e) {}
 
     sdcContext = await DataCaptureContext.forLicenseKey(licenseKey, {
       libraryLocation: 'https://cdn.jsdelivr.net/npm/@scandit/web-datacapture-barcode@8/sdc-lib/',
@@ -190,10 +194,13 @@ const ScanController = (function () {
     log('selecting camera\u2026');
     sdcCamera = null;
     try {
-      if (Camera.atPosition && SDC.CameraPosition) {
+      // Scandit Web v8: prefer the rear (world-facing) camera explicitly.
+      if (Camera.pickBestGuessForPosition && SDC.CameraPosition) {
+        sdcCamera = Camera.pickBestGuessForPosition(SDC.CameraPosition.WorldFacing);
+      } else if (Camera.atPosition && SDC.CameraPosition) {
         sdcCamera = Camera.atPosition(SDC.CameraPosition.WorldFacing);
       }
-    } catch (e) { log('atPosition unavailable: ' + (e && e.message ? e.message : e)); }
+    } catch (e) { log('rear camera pick unavailable: ' + (e && e.message ? e.message : e)); }
     if (!sdcCamera) {
       sdcCamera = (Camera.default !== undefined) ? Camera.default
                 : (Camera.pickBestGuess ? Camera.pickBestGuess() : null);
@@ -253,7 +260,9 @@ const ScanController = (function () {
 
     try {
       const torchBtn = $('torchBtn');
-      if (sdcCamera && sdcCamera.isTorchAvailable) {
+      let torchOk = false;
+      try { if (sdcCamera) torchOk = await sdcCamera.isTorchAvailable(); } catch (e) {}
+      if (torchOk) {
         torchBtn.classList.remove('hidden');
         log('torch available');
       } else {
@@ -334,11 +343,14 @@ const ScanController = (function () {
       const wantUser = (facingMode === 'environment');
       let cam = null;
       try {
-        if (SDC.Camera.atPosition && SDC.CameraPosition) {
-          const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
-          cam = SDC.Camera.atPosition(pos);
+        const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
+        // Scandit Web v8: pickBestGuessForPosition is the correct API (atPosition is gone).
+        if (SDC.Camera.pickBestGuessForPosition) {
+          cam = SDC.Camera.pickBestGuessForPosition(pos);
+        } else if (SDC.Camera.atPosition) {
+          cam = SDC.Camera.atPosition(pos);   // legacy fallback
         }
-      } catch (e) { log('flip atPosition failed: ' + (e && e.message ? e.message : e)); }
+      } catch (e) { log('flip camera pick failed: ' + (e && e.message ? e.message : e)); }
       if (!cam) {
         log('no ' + (wantUser ? 'front' : 'rear') + ' camera available');
         return;
@@ -353,7 +365,9 @@ const ScanController = (function () {
         await sdcContext.setFrameSource(sdcCamera);
         await sdcContext.frameSource.switchToDesiredState(SDC.FrameSourceState.On);
         const torchBtn = $('torchBtn');
-        if (sdcCamera.isTorchAvailable) torchBtn.classList.remove('hidden');
+        let torchOk = false;
+        try { torchOk = await sdcCamera.isTorchAvailable(); } catch (e) {}
+        if (torchOk) torchBtn.classList.remove('hidden');
         else torchBtn.classList.add('hidden');
         log('switched to ' + (wantUser ? 'front' : 'rear') + ' camera');
       } catch (e) { log('flip failed: ' + (e && e.message ? e.message : e)); }
@@ -370,7 +384,12 @@ const ScanController = (function () {
     if (engine === 'scandit') {
       try {
         if (sdcCamera) {
-          sdcCamera.desiredTorchState = torchOn ? SDC.TorchState.On : SDC.TorchState.Off;
+          // Scandit Web v8: setDesiredTorchState is the correct async API.
+          if (sdcCamera.setDesiredTorchState) {
+            await sdcCamera.setDesiredTorchState(torchOn ? SDC.TorchState.On : SDC.TorchState.Off);
+          } else {
+            sdcCamera.desiredTorchState = torchOn ? SDC.TorchState.On : SDC.TorchState.Off; // legacy
+          }
           $('torchBtn').classList.toggle('on', torchOn);
         }
       } catch (e) { torchOn = !torchOn; log('torch toggle failed: ' + e); }
