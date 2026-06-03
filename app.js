@@ -45,6 +45,7 @@ const STORE_TYPES = [
 const STORES_BY_TYPE = {
   sainsburys: [
     { id: 'sby-witney', name: 'Sainsbury\u2019s Witney', addr: 'Witan Way\nWitney OX28 4FF' },
+    { id: 'sby-warlingham', name: 'Sainsbury\u2019s Warlingham', addr: '631 Limpsfield Rd\nWarlingham CR6 9DY' },
   ],
   lidl: [
     // Add Lidl stores here, e.g.
