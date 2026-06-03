@@ -46,6 +46,7 @@
         .count-card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
         .count-num { font-size: 26px; font-weight: 800; line-height: 1; }
         .count-label { font-size: 12px; color: #6B7280; font-weight: 600; margin-top: 5px; }
+        .count-pct { font-size: 12px; font-weight: 800; color: #374151; margin-top: 4px; }
         .count-card.tp .count-num { color: #16A34A; }
         .count-card.fn .count-num { color: #EA580C; }
         .count-card.fp .count-num { color: #DB2777; }
@@ -148,8 +149,25 @@
         });
     }
 
-    function isModel(r) { return String(r.reasonType).toLowerCase() === 'model'; }
-    function isOps(r) { return String(r.reasonType).toLowerCase() === 'operational'; }
+    // Resolve a row's Model/Operational tag. If the stored reasonType is blank
+    // (old rows predate that column), derive it from the rootCause text using
+    // the same mapping the collection side uses.
+    function tagOf(r) {
+        const stored = String(r.reasonType || '').toLowerCase();
+        if (stored === 'model' || stored === 'operational') return stored;
+        const rc = String(r.rootCause || '');
+        if (!rc) return '';
+        // exact match first, then leading-label match (FP stores "Reason — note")
+        let t = reasonType(rc);
+        if (!t) {
+            const defs = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
+            const hit = defs.find(d => rc.indexOf(d.label) === 0);
+            if (hit) t = hit.type;
+        }
+        return String(t).toLowerCase();
+    }
+    function isModel(r) { return tagOf(r) === 'model'; }
+    function isOps(r) { return tagOf(r) === 'operational'; }
 
     function compute(rows) {
         const tp = rows.filter(r => r.classification === 'True Positive');
@@ -230,12 +248,14 @@
         html += '</div>';
 
         // Headline counts
+        const totalRecs = m.tp + m.fn + m.fp;
+        const share = (n) => totalRecs > 0 ? ((n / totalRecs) * 100).toFixed(1) + '%' : '—';
         html += '<div class="section-label">Headline counts</div>';
         html += '<div class="count-grid">';
         html += '<div class="count-card total"><div class="count-num">'+m.recallSlots+'</div><div class="count-label">Recall slots (TP + FN)</div></div>';
-        html += '<div class="count-card tp"><div class="count-num">'+m.tp+'</div><div class="count-label">True Positives</div></div>';
-        html += '<div class="count-card fn"><div class="count-num">'+m.fn+'</div><div class="count-label">False Negatives</div></div>';
-        html += '<div class="count-card fp"><div class="count-num">'+m.fp+'</div><div class="count-label">False Positives</div></div>';
+        html += '<div class="count-card tp"><div class="count-num">'+m.tp+'</div><div class="count-label">True Positives</div><div class="count-pct">'+share(m.tp)+' of records</div></div>';
+        html += '<div class="count-card fn"><div class="count-num">'+m.fn+'</div><div class="count-label">False Negatives</div><div class="count-pct">'+share(m.fn)+' of records</div></div>';
+        html += '<div class="count-card fp"><div class="count-num">'+m.fp+'</div><div class="count-label">False Positives</div><div class="count-pct">'+share(m.fp)+' of records</div></div>';
         html += '</div>';
 
         // Recall + Precision
