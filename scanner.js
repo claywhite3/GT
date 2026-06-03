@@ -10,7 +10,7 @@
       no key or fails to load.
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.21.1';
+  const SCANNER_VERSION = 'scanner v0.21.2';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -338,55 +338,71 @@ const ScanController = (function () {
   }
 
   /* ---- shared controls -------------------------------------------------- */
-  let sdcCameraList = null;   // cached [Camera, ...] from getCameras()
+  let sdcCameraList = null;   // cached [Camera, ...] from getAll()
+
+  function sameCam(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.deviceId && b.deviceId) return a.deviceId === b.deviceId;
+    return false;
+  }
 
   async function flipCamera() {
     if (engine === 'scandit') {
       const wantUser = (facingMode === 'environment');  // currently rear? then we want front
+      const wantPos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
       let cam = null;
 
-      // Preferred: enumerate all cameras once, then pick one whose position is
-      // the opposite of the current. This avoids pickBestGuessForPosition
-      // returning the currently-active camera (the front->back bug).
+      // Scandit Web v8: enumerate all cameras with getAll(). Permission is
+      // already granted by now, so pass cameraAlreadyAccessed=true.
       try {
-        if (!sdcCameraList && SDC.Camera.getCameras) {
-          sdcCameraList = await SDC.Camera.getCameras();
+        if (!sdcCameraList && SDC.Camera.getAll) {
+          sdcCameraList = await SDC.Camera.getAll(true, true);
           log('cameras found: ' + (sdcCameraList ? sdcCameraList.length : 0));
         }
         if (sdcCameraList && sdcCameraList.length) {
-          const wantPos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
-          // match by position property if present
-          cam = sdcCameraList.find(c => c && c.position === wantPos) || null;
-          // fallback: if positions aren't labeled, just pick a different camera
+          // pick a camera at the desired position that isn't the current one
+          cam = sdcCameraList.find(c => c && c.position === wantPos && !sameCam(c, sdcCamera)) || null;
+          // fallback: any distinct camera
           if (!cam && sdcCameraList.length > 1) {
-            cam = sdcCameraList.find(c => c !== sdcCamera) || null;
+            cam = sdcCameraList.find(c => !sameCam(c, sdcCamera)) || null;
           }
         }
-      } catch (e) { log('getCameras failed: ' + (e && e.message ? e.message : e)); }
+      } catch (e) { log('getAll failed: ' + (e && e.message ? e.message : e)); }
 
-      // Secondary: pickBestGuessForPosition (works rear->front reliably).
+      // Secondary: pickBestGuessForPosition
       if (!cam) {
         try {
-          const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
-          if (SDC.Camera.pickBestGuessForPosition) cam = SDC.Camera.pickBestGuessForPosition(pos);
-          else if (SDC.Camera.atPosition) cam = SDC.Camera.atPosition(pos);
+          if (SDC.Camera.pickBestGuessForPosition) cam = SDC.Camera.pickBestGuessForPosition(wantPos);
+          else if (SDC.Camera.atPosition) cam = SDC.Camera.atPosition(wantPos);
         } catch (e) { log('flip camera pick failed: ' + (e && e.message ? e.message : e)); }
       }
 
-      // If we still got the same camera back, that's not a real flip.
-      if (!cam || cam === sdcCamera) {
+      if (!cam || sameCam(cam, sdcCamera)) {
         log('no distinct ' + (wantUser ? 'front' : 'rear') + ' camera available');
         return;
       }
+
+      // Safe switch sequence: turn current source off, prepare the candidate,
+      // bring it on, and ONLY update state once it's actually active.
       try {
-        torchOn = false;
-        $('torchBtn').classList.remove('on');
+        try {
+          if (sdcContext && sdcContext.frameSource) {
+            await sdcContext.frameSource.switchToDesiredState(SDC.FrameSourceState.Off);
+          }
+        } catch (e) { log('could not stop current camera: ' + e); }
+
+        const camSettings = SDCBarcode.BarcodeCapture.recommendedCameraSettings;
+        if (camSettings) await cam.applySettings(camSettings);
+        await sdcContext.setFrameSource(cam);
+        await sdcContext.frameSource.switchToDesiredState(SDC.FrameSourceState.On);
+
+        // success — now commit state
         sdcCamera = cam;
         facingMode = wantUser ? 'user' : 'environment';
-        const camSettings = SDCBarcode.BarcodeCapture.recommendedCameraSettings;
-        if (camSettings) await sdcCamera.applySettings(camSettings);
-        await sdcContext.setFrameSource(sdcCamera);
-        await sdcContext.frameSource.switchToDesiredState(SDC.FrameSourceState.On);
+        torchOn = false;
+        $('torchBtn').classList.remove('on');
+
         const torchBtn = $('torchBtn');
         let torchOk = false;
         try { torchOk = await sdcCamera.isTorchAvailable(); } catch (e) {}
