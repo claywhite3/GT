@@ -10,7 +10,7 @@
       no key or fails to load.
    ========================================================================= */
 const ScanController = (function () {
-  const SCANNER_VERSION = 'scanner v0.21.0';
+  const SCANNER_VERSION = 'scanner v0.21.1';
   let opts = {};
   let scanCompleted = false;
   let lastInvalidShake = 0;
@@ -338,21 +338,44 @@ const ScanController = (function () {
   }
 
   /* ---- shared controls -------------------------------------------------- */
+  let sdcCameraList = null;   // cached [Camera, ...] from getCameras()
+
   async function flipCamera() {
     if (engine === 'scandit') {
-      const wantUser = (facingMode === 'environment');
+      const wantUser = (facingMode === 'environment');  // currently rear? then we want front
       let cam = null;
+
+      // Preferred: enumerate all cameras once, then pick one whose position is
+      // the opposite of the current. This avoids pickBestGuessForPosition
+      // returning the currently-active camera (the front->back bug).
       try {
-        const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
-        // Scandit Web v8: pickBestGuessForPosition is the correct API (atPosition is gone).
-        if (SDC.Camera.pickBestGuessForPosition) {
-          cam = SDC.Camera.pickBestGuessForPosition(pos);
-        } else if (SDC.Camera.atPosition) {
-          cam = SDC.Camera.atPosition(pos);   // legacy fallback
+        if (!sdcCameraList && SDC.Camera.getCameras) {
+          sdcCameraList = await SDC.Camera.getCameras();
+          log('cameras found: ' + (sdcCameraList ? sdcCameraList.length : 0));
         }
-      } catch (e) { log('flip camera pick failed: ' + (e && e.message ? e.message : e)); }
+        if (sdcCameraList && sdcCameraList.length) {
+          const wantPos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
+          // match by position property if present
+          cam = sdcCameraList.find(c => c && c.position === wantPos) || null;
+          // fallback: if positions aren't labeled, just pick a different camera
+          if (!cam && sdcCameraList.length > 1) {
+            cam = sdcCameraList.find(c => c !== sdcCamera) || null;
+          }
+        }
+      } catch (e) { log('getCameras failed: ' + (e && e.message ? e.message : e)); }
+
+      // Secondary: pickBestGuessForPosition (works rear->front reliably).
       if (!cam) {
-        log('no ' + (wantUser ? 'front' : 'rear') + ' camera available');
+        try {
+          const pos = wantUser ? SDC.CameraPosition.UserFacing : SDC.CameraPosition.WorldFacing;
+          if (SDC.Camera.pickBestGuessForPosition) cam = SDC.Camera.pickBestGuessForPosition(pos);
+          else if (SDC.Camera.atPosition) cam = SDC.Camera.atPosition(pos);
+        } catch (e) { log('flip camera pick failed: ' + (e && e.message ? e.message : e)); }
+      }
+
+      // If we still got the same camera back, that's not a real flip.
+      if (!cam || cam === sdcCamera) {
+        log('no distinct ' + (wantUser ? 'front' : 'rear') + ' camera available');
         return;
       }
       try {
