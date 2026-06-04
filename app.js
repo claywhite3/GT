@@ -94,10 +94,16 @@ const ROOT_CAUSES = ROOT_CAUSE_DEFS.map(r => r.label);
 
 /* ---- FALSE POSITIVE reasons -------------------------------------------- */
 const FP_REASON_DEFS = [
-  { label: 'Over-detection (gap flagged where stock present)', type: 'Model' },
-  { label: 'Dress task / shelf restocked before audit', type: 'Operational' },
-  { label: 'Packaging left in front of empty slot', type: 'Operational' },
-  { label: 'Product in packaging/case, top failed to detect', type: 'Operational' },
+  { label: 'Dressed / restocked before audit', type: 'Operational' },
+  { label: 'Camera moved or placement', type: 'Operational' },
+  { label: 'Product merchandised in wrong slot', type: 'Operational' },
+  { label: 'Product drift into empty slot', type: 'Operational' },
+  { label: 'Front empty, back full', type: 'Operational' },
+  { label: 'Dressed blind spot', type: 'Operational' },
+  { label: 'Over-detection / ESL misalignment', type: 'Model' },
+  { label: 'Product in packaging or case, failed to detect', type: 'Model' },
+  { label: 'Detected a different product', type: 'Model' },
+  { label: 'Model failure (general/depth/small product)', type: 'Model' },
 ];
 const FP_REASONS = FP_REASON_DEFS.map(r => r.label);
 
@@ -107,6 +113,52 @@ function reasonType(label) {
   const all = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
   const hit = all.find(r => r.label === label);
   return hit ? hit.type : '';
+}
+
+/* ---- FREE-TEXT REASON NORMALIZATION ------------------------------------
+   Older / free-text FP reasons don't match the defined lists. This maps the
+   observed free-text reasons to a canonical label + Model/Operational tag.
+   - Two groups are CONSOLIDATED: all "Dressed ..." variants -> "Dressed",
+     and the camera-moved variants -> "Camera moved".
+   - Everything else keeps its own label.
+   - Anything not recognized returns tag '' (shown as "Untagged", never
+     silently defaulted to Operational).
+   Matching is done on a normalized (lowercased, trimmed) form, and the start
+   of the string, so minor wording/case differences still map correctly. */
+const REASON_RULES = [
+  // canonical, type, [matchers run as "startsWith" on normalized text]
+  { canon: 'Dressed', type: 'Operational', starts: ['dressed'], not: ['dressed blind'] },
+  { canon: 'Dressed blind spot', type: 'Operational', starts: ['dressed blind'] },
+  { canon: 'Camera moved', type: 'Operational', starts: ['camera moved'] },
+  { canon: 'Product in packaging/case, model failed to detect', type: 'Model',
+    starts: ['product is in packaging', 'product is in a case'] },
+  { canon: 'Model issue — depth', type: 'Model', starts: ['model issue depth', 'model issue — depth'] },
+  { canon: 'Model failure', type: 'Model', starts: ['model failure'] },
+  { canon: 'Small product — bad model', type: 'Model', starts: ['small product'] },
+  { canon: 'Over-detection / ESL misalignment', type: 'Model', starts: ['over detection', 'over-detection'] },
+  { canon: 'Detected a different product', type: 'Model', starts: ['detected a different product'] },
+  { canon: 'Product merchandised in the wrong slot', type: 'Operational', starts: ['product merchandised'] },
+  { canon: 'Product pushed off its own tag', type: 'Operational', starts: ['product was pushed completely'] },
+  { canon: 'Product drift into empty slot', type: 'Operational', starts: ['product drift'] },
+  { canon: 'Front empty, back full', type: 'Operational', starts: ['front was empty'] },
+];
+
+function normalizeReason(raw) {
+  // Returns { label, type }. label is the canonical display label; type may be ''.
+  const text = String(raw || '').trim();
+  if (!text) return { label: '', type: '' };
+  // 1) exact match against the defined lists (current/correct reasons)
+  const defs = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
+  const exact = defs.find(d => d.label === text);
+  if (exact) return { label: exact.label, type: exact.type };
+  // 2) free-text rules (consolidation + tagging)
+  const norm = text.toLowerCase();
+  for (const rule of REASON_RULES) {
+    if (rule.not && rule.not.some(n => norm.startsWith(n))) continue;
+    if (rule.starts.some(s => norm.startsWith(s))) return { label: rule.canon, type: rule.type };
+  }
+  // 3) unrecognized -> keep its own text, no tag
+  return { label: text, type: '' };
 }
 
 /* ---- SESSION HELPERS --------------------------------------------------- */

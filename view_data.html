@@ -68,6 +68,7 @@
         .wl-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; padding: 1px 6px; border-radius: 10px; }
         .wl-tag.model { background: #FFEDD5; color: #C2410C; }
         .wl-tag.operational { background: #FEF9C3; color: #A16207; }
+        .wl-tag.untagged { background: #F3F4F6; color: #6B7280; }
 
         /* Confusion matrix */
         .cm-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: stretch; }
@@ -237,19 +238,14 @@
     function tagOf(r) {
         const stored = String(r.reasonType || '').toLowerCase();
         if (stored === 'model' || stored === 'operational') return stored;
-        const rc = String(r.rootCause || '');
-        if (!rc) return '';
-        // exact match first, then leading-label match (FP stores "Reason — note")
-        let t = reasonType(rc);
-        if (!t) {
-            const defs = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
-            const hit = defs.find(d => rc.indexOf(d.label) === 0);
-            if (hit) t = hit.type;
-        }
-        return String(t).toLowerCase();
+        // derive from the reason text via the canonical normalizer
+        const n = normalizeReason(r.rootCause);
+        return String(n.type || '').toLowerCase();
     }
     function isModel(r) { return tagOf(r) === 'model'; }
     function isOps(r) { return tagOf(r) === 'operational'; }
+    // Canonical reason label for grouping (consolidates Dressed/Camera variants).
+    function reasonLabelOf(r) { return normalizeReason(r.rootCause).label || 'Unspecified'; }
 
     function compute(rows) {
         const tp = rows.filter(r => r.classification === 'True Positive');
@@ -311,22 +307,20 @@
             return '<div class="empty">No data for this view yet.</div>';
         }
 
-        // group errors by reason, tagged model/operational
-        const defs = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
+        // group errors by canonical reason (consolidates Dressed/Camera variants)
         const byReason = {};
         errRows.forEach(r => {
-            const rc = String(r.rootCause || '');
-            let hit = defs.find(d => rc === d.label) || defs.find(d => rc.indexOf(d.label) === 0);
-            const label = hit ? hit.label : (rc || 'Unspecified');
-            const type = hit ? hit.type : (tagOf(r) === 'model' ? 'Model' : 'Operational');
-            const key = label;
-            if (!byReason[key]) byReason[key] = { label, type, n: 0 };
-            byReason[key].n++;
+            const n = normalizeReason(r.rootCause);
+            const label = n.label || 'Unspecified';
+            const type = n.type === 'Model' ? 'Model' : (n.type === 'Operational' ? 'Operational' : 'Untagged');
+            if (!byReason[label]) byReason[label] = { label, type, n: 0 };
+            byReason[label].n++;
         });
-        // order: operational first (yellow), then model (orange), each by size desc
+        // order: operational (yellow) first, then model (orange), then untagged (grey), each by size desc
+        const typeRank = { Operational: 0, Model: 1, Untagged: 2 };
         let wedges = Object.values(byReason);
         wedges.sort((a, b) => {
-            if (a.type !== b.type) return a.type === 'Operational' ? -1 : 1;
+            if (a.type !== b.type) return typeRank[a.type] - typeRank[b.type];
             return b.n - a.n;
         });
 
@@ -347,8 +341,9 @@
             return s;
         }
         segs += seg(tp/denom, '#22C55E');   // green
-        const opColor = '#FACC15', modColor = '#F97316';
-        wedges.forEach(w => { segs += seg(w.n/denom, w.type === 'Operational' ? opColor : modColor); });
+        const opColor = '#FACC15', modColor = '#F97316', unColor = '#9CA3AF';
+        const wColor = (t) => t === 'Operational' ? opColor : (t === 'Model' ? modColor : unColor);
+        wedges.forEach(w => { segs += seg(w.n/denom, wColor(w.type)); });
 
         let html = '<div class="wheel-wrap">';
         html += '<svg viewBox="0 0 '+size+' '+size+'" class="wheel-svg">'+segs
@@ -362,7 +357,7 @@
               + '<span class="wl-name">Correct (TP)</span><span class="wl-pct">'+greenPct.toFixed(1)+'%</span></div>';
         wedges.forEach(w => {
             const pctv = (w.n/denom*100).toFixed(1);
-            const color = w.type === 'Operational' ? opColor : modColor;
+            const color = wColor(w.type);
             const key = w.label;
             html += '<div class="wl-row toggle'+(on[key]?' active':'')+'" onclick="toggleTrend(\''+view+'\',\''+key.replace(/'/g,"\\'")+'\')">'
                   + '<span class="wl-dot" style="background:'+color+'"></span>'
@@ -393,10 +388,7 @@
             if (r.classification === 'True Positive') days[key].tp++;
             else if (r.classification === errCls) {
                 days[key].err++;
-                const defs = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
-                const rc = String(r.rootCause || '');
-                let hit = defs.find(x => rc === x.label) || defs.find(x => rc.indexOf(x.label) === 0);
-                const label = hit ? hit.label : (rc || 'Unspecified');
+                const label = normalizeReason(r.rootCause).label || 'Unspecified';
                 days[key].byReason[label] = (days[key].byReason[label] || 0) + 1;
             }
         });
@@ -431,7 +423,7 @@
         }
         wedges.forEach(w => {
             if (!on[w.label]) return;
-            const color = w.type === 'Operational' ? '#FACC15' : '#F97316';
+            const color = w.type === 'Operational' ? '#FACC15' : (w.type === 'Model' ? '#F97316' : '#9CA3AF');
             const pts = dayKeys.map((k,i) => {
                 const dn = days[k].tp + days[k].err;
                 const cnt = days[k].byReason[w.label] || 0;

@@ -166,7 +166,7 @@
         <div class="sheet-title">False Positive — pick a reason</div>
         <div class="sheet-sub">Choose the closest reason, and add a note if helpful.</div>
         <div class="fp-reasons" id="fpReasons"></div>
-        <textarea class="fp-input" id="fpInput" placeholder="Optional note (what you saw)…"></textarea>
+        <textarea class="fp-input" id="fpInput" placeholder="Note / Other reason (if not listed above)…"></textarea>
         <div class="fp-error" id="fpError"></div>
         <div class="sheet-actions">
             <button class="sheet-cancel" onclick="closeFP()">Cancel</button>
@@ -247,17 +247,26 @@
     function closeFP() { document.getElementById('fpOverlay').classList.remove('open'); }
 
     function saveFP() {
-        if (!fpReason) {
-            document.getElementById('fpError').textContent = 'Please pick a reason.';
+        const note = document.getElementById('fpInput').value.trim();
+        // Allow EITHER a picked reason OR a free-text "Other" note.
+        if (!fpReason && !note) {
+            document.getElementById('fpError').textContent = 'Pick a reason or describe it in the note.';
             return;
         }
-        const note = document.getElementById('fpInput').value.trim();
         closeFP();
-        // rootCause stores the reason; the note (if any) is appended in parens.
-        const detail = note ? (fpReason + ' \u2014 ' + note) : fpReason;
+        // If a reason is picked: rootCause = reason (+ note). If only a note:
+        // rootCause = the note itself, and the tag is left blank (shows Untagged).
+        let detail, reasonForTag;
+        if (fpReason) {
+            detail = note ? (fpReason + ' \u2014 ' + note) : fpReason;
+            reasonForTag = fpReason;
+        } else {
+            detail = note;
+            reasonForTag = '';   // Other / free-text -> Untagged in analytics
+        }
         Session.set('pendingClassification', 'False Positive');
         Session.set('pendingNote', detail);
-        Session.set('pendingReason', fpReason);
+        Session.set('pendingReason', reasonForTag);
         window.location.href = 'saved.html';
     }
 
