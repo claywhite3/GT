@@ -47,6 +47,60 @@
         .count-num { font-size: 26px; font-weight: 800; line-height: 1; }
         .count-label { font-size: 12px; color: #6B7280; font-weight: 600; margin-top: 5px; }
         .count-pct { font-size: 12px; font-weight: 800; color: #374151; margin-top: 4px; }
+
+        /* Three-view toggle */
+        .view-toggle { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 4px 0 18px; }
+        .vt-btn { padding: 12px 8px; border-radius: 12px; border: 1.5px solid #2563EB; background: #fff; color: #2563EB; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; box-shadow: 0 2px 6px rgba(17,24,39,0.06); }
+        .vt-btn:active { transform: scale(.97); }
+        .vt-btn.active { background: #2563EB; color: #fff; }
+
+        /* Wheel */
+        .wheel-wrap { background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
+        .wheel-svg { width: 220px; height: 220px; display: block; margin: 0 auto 8px; }
+        .wheel-center { font-size: 38px; font-weight: 800; fill: #111827; }
+        .wheel-sub { font-size: 12px; font-weight: 700; fill: #6B7280; text-transform: uppercase; letter-spacing: .5px; }
+        .wheel-legend { margin-top: 10px; }
+        .wl-row { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: 1px solid #F1F2F5; }
+        .wl-row:last-child { border-bottom: none; }
+        .wl-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+        .wl-name { flex: 1; font-size: 13.5px; font-weight: 600; color: #374151; line-height: 1.3; }
+        .wl-pct { font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; font-size: 14px; }
+        .wl-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; padding: 1px 6px; border-radius: 10px; }
+        .wl-tag.model { background: #FFEDD5; color: #C2410C; }
+        .wl-tag.operational { background: #FEF9C3; color: #A16207; }
+
+        /* Confusion matrix */
+        .cm-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: stretch; }
+        .cm-corner { }
+        .cm-head { font-size: 11px; font-weight: 800; color: #6B7280; text-transform: uppercase; letter-spacing: .3px; text-align: center; padding: 6px 4px; align-self: end; }
+        .cm-side { font-size: 11px; font-weight: 800; color: #6B7280; text-transform: uppercase; letter-spacing: .3px; writing-mode: vertical-rl; transform: rotate(180deg); text-align: center; padding: 4px; display: flex; align-items: center; justify-content: center; }
+        .cm-cell { background: #fff; border-radius: 14px; padding: 16px 12px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); text-align: center; }
+        .cm-cell.na { background: #F9FAFB; }
+        .cm-cell.toggle { cursor: pointer; transition: opacity .12s, box-shadow .12s; }
+        .cm-cell.toggle:active { transform: scale(.98); }
+        .cm-cell.toggle.off { opacity: .4; box-shadow: inset 0 0 0 1.5px #E5E7EB; }
+        .cm-cell.toggle.active { box-shadow: 0 2px 8px rgba(17,24,39,0.12); }
+        .cm-label { font-size: 12px; font-weight: 700; color: #374151; }
+        .cm-num { font-size: 28px; font-weight: 800; margin-top: 6px; color: #9CA3AF; }
+        .cm-pct { font-size: 11px; font-weight: 600; color: #9CA3AF; margin-top: 4px; }
+
+        /* Clear filters */
+        .clear-filters { width: 100%; margin-top: 4px; padding: 9px; background: #F3F4F6; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; color: #6B7280; cursor: pointer; }
+        .clear-filters:active { background: #E5E7EB; }
+
+        /* Legend rows as toggles */
+        .wl-row.toggle { cursor: pointer; border-radius: 8px; padding-left: 6px; padding-right: 6px; margin: 0 -6px; transition: background .12s; }
+        .wl-row.toggle:active { background: #F3F4F6; }
+        .wl-row.toggle.active { background: #EFF3FF; }
+        .wl-row.toggle.active .wl-name { color: #2563EB; }
+
+        /* Trend chart */
+        .trend-wrap { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); margin-top: 12px; }
+        .trend-title { font-size: 12px; font-weight: 800; color: #6B7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+        .trend-svg { width: 100%; height: auto; display: block; }
+        .tr-axis { font-size: 9px; fill: #9CA3AF; font-weight: 600; }
+        .trend-hint, .trend-empty { font-size: 12px; color: #9CA3AF; font-weight: 500; text-align: center; padding: 10px; }
+        .trend-empty { background: #fff; border-radius: 16px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); margin-top: 12px; }
         .count-card.tp .count-num { color: #16A34A; }
         .count-card.fn .count-num { color: #EA580C; }
         .count-card.fp .count-num { color: #DB2777; }
@@ -118,6 +172,22 @@
 
     let ALL = [];   // all records
     const F = { from: '', to: '', store: '', category: '', classification: '', interval: '' };
+    let VIEW = 'recall';   // 'precision' | 'recall' | 'matrix'
+    // Which trend lines are visible, per view. 'score' is the overall line.
+    const TREND_ON = { recall: { score: true }, precision: { score: true } };
+    // Which confusion bands are shown in the matrix stacked-area chart.
+    const MATRIX_BANDS = { tp: true, fn: true, fp: true };
+    function toggleBand(key) { MATRIX_BANDS[key] = !MATRIX_BANDS[key]; render(); }
+    function toggleTrend(view, key) {
+        if (!TREND_ON[view]) TREND_ON[view] = {};
+        TREND_ON[view][key] = !TREND_ON[view][key];
+        render();
+    }
+    function setView(v) { VIEW = v; render(); }
+    function clearFilters() {
+        F.from = ''; F.to = ''; F.store = ''; F.category = ''; F.classification = ''; F.interval = '';
+        render();
+    }
 
     function pct(n, d) { return d > 0 ? (n / d) : null; }
     function fmtPct(v) { return v === null ? '—' : (v * 100).toFixed(1) + '%'; }
@@ -134,6 +204,16 @@
         return isNaN(d) ? null : d;
     }
 
+    // Return YYYY-MM-DD for a record's timestamp, in local terms, for safe
+    // calendar-date comparison against the date inputs (which are YYYY-MM-DD).
+    function ymd(d) {
+        if (!d) return null;
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    }
+
     function applyFilters() {
         return ALL.filter(r => {
             if (F.store && r.storeAddress !== F.store) return false;
@@ -143,8 +223,9 @@
             if (F.from || F.to) {
                 const d = toDate(r.timestamp);
                 if (!d) return false;
-                if (F.from && d < new Date(F.from)) return false;
-                if (F.to) { const t = new Date(F.to); t.setHours(23,59,59); if (d > t) return false; }
+                const rec = ymd(d);                 // record's calendar date
+                if (F.from && rec < F.from) return false;
+                if (F.to && rec > F.to) return false;
             }
             return true;
         });
@@ -216,6 +297,276 @@
         return { counts, total: subset.length };
     }
 
+    // Build the multi-zone wheel for recall or precision.
+    // green = TP; wedges = errors (FN for recall, FP for precision) by reason,
+    // yellow = operational, orange = model. Wedge % = share of all slots (TP+errors).
+    function renderWheel(rows, m, view) {
+        const isRecall = (view === 'recall');
+        const errCls = isRecall ? 'False Negative' : 'False Positive';
+        const errRows = rows.filter(r => r.classification === errCls);
+        const tp = m.tp;
+        const denom = tp + errRows.length;   // TP + errors
+
+        if (denom === 0) {
+            return '<div class="empty">No data for this view yet.</div>';
+        }
+
+        // group errors by reason, tagged model/operational
+        const defs = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
+        const byReason = {};
+        errRows.forEach(r => {
+            const rc = String(r.rootCause || '');
+            let hit = defs.find(d => rc === d.label) || defs.find(d => rc.indexOf(d.label) === 0);
+            const label = hit ? hit.label : (rc || 'Unspecified');
+            const type = hit ? hit.type : (tagOf(r) === 'model' ? 'Model' : 'Operational');
+            const key = label;
+            if (!byReason[key]) byReason[key] = { label, type, n: 0 };
+            byReason[key].n++;
+        });
+        // order: operational first (yellow), then model (orange), each by size desc
+        let wedges = Object.values(byReason);
+        wedges.sort((a, b) => {
+            if (a.type !== b.type) return a.type === 'Operational' ? -1 : 1;
+            return b.n - a.n;
+        });
+
+        const greenPct = (tp / denom) * 100;
+
+        // build SVG donut
+        const size = 220, cx = size/2, cy = size/2, r = 92, sw = 36;
+        const circ = 2 * Math.PI * r;
+        let offset = 0;
+        let segs = '';
+        // green segment first
+        function seg(frac, color) {
+            const gap = 0.008;  // small gap between wedges for visual separation
+            const len = Math.max(0, (frac - gap)) * circ;
+            const s = '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" '
+                + 'stroke-dasharray="'+len+' '+(circ-len)+'" stroke-dashoffset="'+(-offset)+'" transform="rotate(-90 '+cx+' '+cy+')"></circle>';
+            offset += frac * circ;
+            return s;
+        }
+        segs += seg(tp/denom, '#22C55E');   // green
+        const opColor = '#FACC15', modColor = '#F97316';
+        wedges.forEach(w => { segs += seg(w.n/denom, w.type === 'Operational' ? opColor : modColor); });
+
+        let html = '<div class="wheel-wrap">';
+        html += '<svg viewBox="0 0 '+size+' '+size+'" class="wheel-svg">'+segs
+              + '<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" class="wheel-center">'+greenPct.toFixed(1)+'%</text>'
+              + '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" class="wheel-sub">'+(isRecall?'Recall':'Precision')+'</text>'
+              + '</svg>';
+        // legend — each row is a toggle for its trend line
+        const on = TREND_ON[view] || {};
+        html += '<div class="wheel-legend">';
+        html += '<div class="wl-row toggle'+(on.score?' active':'')+'" onclick="toggleTrend(\''+view+'\',\'score\')"><span class="wl-dot" style="background:#22C55E"></span>'
+              + '<span class="wl-name">Correct (TP)</span><span class="wl-pct">'+greenPct.toFixed(1)+'%</span></div>';
+        wedges.forEach(w => {
+            const pctv = (w.n/denom*100).toFixed(1);
+            const color = w.type === 'Operational' ? opColor : modColor;
+            const key = w.label;
+            html += '<div class="wl-row toggle'+(on[key]?' active':'')+'" onclick="toggleTrend(\''+view+'\',\''+key.replace(/'/g,"\\'")+'\')">'
+                  + '<span class="wl-dot" style="background:'+color+'"></span>'
+                  + '<span class="wl-name">'+w.label+' <span class="wl-tag '+w.type.toLowerCase()+'">'+w.type+'</span></span>'
+                  + '<span class="wl-pct">'+pctv+'%</span></div>';
+        });
+        html += '</div></div>';
+        html += '<div class="note-line">Each wedge is its share of all '+(isRecall?'recall':'precision')+' slots \u2014 fixing it lifts the green by that much. Tap a row to add it to the trend graph below.</div>';
+
+        // trend graph — extension of the wheel box
+        html += renderTrend(rows, view, wedges);
+        return html;
+    }
+
+    // Daily trend chart. Score line = recall/precision % per day; reason lines =
+    // that reason's % of slots per day. All on a 0-100% axis, from baseline 0.
+    function renderTrend(rows, view, wedges) {
+        const isRecall = (view === 'recall');
+        const errCls = isRecall ? 'False Negative' : 'False Positive';
+        const on = TREND_ON[view] || {};
+
+        // group rows by day
+        const days = {};
+        rows.forEach(r => {
+            const d = toDate(r.timestamp); if (!d) return;
+            const key = ymd(d);
+            if (!days[key]) days[key] = { tp:0, err:0, byReason:{} };
+            if (r.classification === 'True Positive') days[key].tp++;
+            else if (r.classification === errCls) {
+                days[key].err++;
+                const defs = ROOT_CAUSE_DEFS.concat(FP_REASON_DEFS);
+                const rc = String(r.rootCause || '');
+                let hit = defs.find(x => rc === x.label) || defs.find(x => rc.indexOf(x.label) === 0);
+                const label = hit ? hit.label : (rc || 'Unspecified');
+                days[key].byReason[label] = (days[key].byReason[label] || 0) + 1;
+            }
+        });
+        const dayKeys = Object.keys(days).sort();
+        if (dayKeys.length < 2) {
+            return '<div class="trend-empty">Trend appears once there are at least 2 days of data.</div>';
+        }
+
+        // chart geometry
+        const W = 320, H = 180, padL = 34, padR = 12, padT = 12, padB = 26;
+        const plotW = W - padL - padR, plotH = H - padT - padB;
+        const xFor = i => padL + (dayKeys.length === 1 ? plotW/2 : (i/(dayKeys.length-1))*plotW);
+        const yFor = pctv => padT + plotH - (pctv/100)*plotH;
+
+        // gridlines + axis
+        let svg = '';
+        [0,25,50,75,100].forEach(g => {
+            const y = yFor(g);
+            svg += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#EEF0F4" stroke-width="1"></line>';
+            svg += '<text x="'+(padL-6)+'" y="'+(y+3)+'" text-anchor="end" class="tr-axis">'+g+'</text>';
+        });
+
+        // build the set of lines to draw
+        const lines = [];
+        if (on.score) {
+            const pts = dayKeys.map((k,i) => {
+                const dn = days[k].tp + days[k].err;
+                const v = dn > 0 ? (days[k].tp/dn)*100 : 0;
+                return [xFor(i), yFor(v)];
+            });
+            lines.push({ color:'#22C55E', pts });
+        }
+        wedges.forEach(w => {
+            if (!on[w.label]) return;
+            const color = w.type === 'Operational' ? '#FACC15' : '#F97316';
+            const pts = dayKeys.map((k,i) => {
+                const dn = days[k].tp + days[k].err;
+                const cnt = days[k].byReason[w.label] || 0;
+                const v = dn > 0 ? (cnt/dn)*100 : 0;
+                return [xFor(i), yFor(v)];
+            });
+            lines.push({ color, pts });
+        });
+
+        lines.forEach(ln => {
+            const path = ln.pts.map((p,i) => (i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+            svg += '<path d="'+path+'" fill="none" stroke="'+ln.color+'" stroke-width="2.5" stroke-linejoin="round"></path>';
+            ln.pts.forEach(p => { svg += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3" fill="'+ln.color+'"></circle>'; });
+        });
+
+        // x labels (first, middle, last to avoid crowding)
+        const lblIdx = dayKeys.length <= 4 ? dayKeys.map((_,i)=>i) : [0, Math.floor((dayKeys.length-1)/2), dayKeys.length-1];
+        lblIdx.forEach(i => {
+            const k = dayKeys[i];
+            const md = k.slice(5); // MM-DD
+            svg += '<text x="'+xFor(i)+'" y="'+(H-8)+'" text-anchor="middle" class="tr-axis">'+md+'</text>';
+        });
+
+        let html = '<div class="trend-wrap">';
+        html += '<div class="trend-title">Daily trend</div>';
+        html += '<svg viewBox="0 0 '+W+' '+H+'" class="trend-svg">'+svg+'</svg>';
+        if (lines.length === 0) html += '<div class="trend-hint">Tap reasons above to plot them.</div>';
+        html += '</div>';
+        return html;
+    }
+
+    function renderMatrix(m, rows) {
+        const tot = m.tp + m.fn + m.fp;   // TN unknown, excluded from total
+        const cell = (label, n, color, key) => {
+            const p = tot > 0 ? ((n/tot)*100).toFixed(1) + '%' : '—';
+            return '<div class="cm-cell"><div class="cm-label">'+label+'</div>'
+                 + '<div class="cm-num" style="color:'+color+'">'+n+'</div>'
+                 + '<div class="cm-pct">'+p+' of total</div></div>';
+        };
+        let html = '<div class="cm-grid">';
+        html += '<div class="cm-corner"></div><div class="cm-head">Predicted Out-of-Shelf</div><div class="cm-head">Predicted In-Stock</div>';
+        html += '<div class="cm-side">Actually OOS</div>';
+        html += cell('True Positive', m.tp, '#16A34A', 'tp');
+        html += cell('False Negative', m.fn, '#EA580C', 'fn');
+        html += '<div class="cm-side">Actually In-Stock</div>';
+        html += cell('False Positive', m.fp, '#DB2777', 'fp');
+        html += '<div class="cm-cell na"><div class="cm-label">True Negative</div><div class="cm-num">N/A</div><div class="cm-pct">not collected</div></div>';
+        html += '</div>';
+        html += '<div class="note-line">True Negatives aren\'t counted in this kind of audit (you don\'t log every correctly-fine slot), so that cell is N/A.</div>';
+        html += renderMatrixTrend(rows);
+        return html;
+    }
+
+    // Stacked-area trend: green TP (bottom), orange FN (middle), red FP (top),
+    // each day's split normalized to fill 0-100%. Translucent bands, point dots.
+    function renderMatrixTrend(rows) {
+        const days = {};
+        rows.forEach(r => {
+            const d = toDate(r.timestamp); if (!d) return;
+            const k = ymd(d);
+            if (!days[k]) days[k] = { tp:0, fn:0, fp:0 };
+            if (r.classification === 'True Positive') days[k].tp++;
+            else if (r.classification === 'False Negative') days[k].fn++;
+            else if (r.classification === 'False Positive') days[k].fp++;
+        });
+        const dayKeys = Object.keys(days).sort();
+        if (dayKeys.length < 2) {
+            return '<div class="trend-empty">Trend appears once there are at least 2 days of data.</div>';
+        }
+
+        const W = 320, H = 190, padL = 34, padR = 12, padT = 12, padB = 26;
+        const plotW = W - padL - padR, plotH = H - padT - padB;
+        const xFor = i => padL + (i/(dayKeys.length-1))*plotW;
+        const yFor = pctv => padT + plotH - (pctv/100)*plotH;
+
+        // All three bands always shown (toggle disabled for the matrix trend).
+        const order = [
+            { key:'tp', color:'#22C55E' },
+            { key:'fn', color:'#F97316' },
+            { key:'fp', color:'#EF4444' },
+        ];
+
+        let svg = '';
+        // gridlines
+        [0,25,50,75,100].forEach(g => {
+            const y = yFor(g);
+            svg += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#EEF0F4" stroke-width="1"></line>';
+            svg += '<text x="'+(padL-6)+'" y="'+(y+3)+'" text-anchor="end" class="tr-axis">'+g+'</text>';
+        });
+
+        if (order.length === 0) {
+            svg += '<text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle" class="tr-axis">Tap a cell to show its band</text>';
+        } else {
+            // compute normalized cumulative tops per day
+            const cum = dayKeys.map(k => {
+                const d = days[k];
+                const sum = order.reduce((s,b) => s + d[b.key], 0) || 1;
+                let acc = 0;
+                const tops = {};
+                order.forEach(b => { acc += (d[b.key]/sum)*100; tops[b.key] = acc; });
+                return tops;
+            });
+            // draw bands from top of stack downward so fills layer correctly
+            let prevTopByDay = dayKeys.map(()=>0); // baseline 0
+            order.forEach((b) => {
+                // band area between previous cumulative and this cumulative
+                const upper = dayKeys.map((k,i) => [xFor(i), yFor(cum[i][b.key])]);
+                const lowerVals = dayKeys.map((k,i) => prevTopByDay[i]);
+                const lower = dayKeys.map((k,i) => [xFor(i), yFor(lowerVals[i])]);
+                let path = 'M'+upper[0][0].toFixed(1)+' '+upper[0][1].toFixed(1);
+                upper.forEach((p,i)=>{ if(i>0) path += ' L'+p[0].toFixed(1)+' '+p[1].toFixed(1); });
+                for (let i=lower.length-1;i>=0;i--){ path += ' L'+lower[i][0].toFixed(1)+' '+lower[i][1].toFixed(1); }
+                path += ' Z';
+                svg += '<path d="'+path+'" fill="'+b.color+'" fill-opacity="0.35" stroke="none"></path>';
+                // boundary line on the band top + data point dots
+                let line = upper.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+                svg += '<path d="'+line+'" fill="none" stroke="'+b.color+'" stroke-width="2"></path>';
+                upper.forEach(p => { svg += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.5" fill="#1F2937"></circle>'; });
+                prevTopByDay = dayKeys.map((k,i)=>cum[i][b.key]);
+            });
+        }
+
+        // x labels
+        const lblIdx = dayKeys.length <= 4 ? dayKeys.map((_,i)=>i) : [0, Math.floor((dayKeys.length-1)/2), dayKeys.length-1];
+        lblIdx.forEach(i => {
+            svg += '<text x="'+xFor(i)+'" y="'+(H-8)+'" text-anchor="middle" class="tr-axis">'+dayKeys[i].slice(5)+'</text>';
+        });
+
+        let html = '<div class="trend-wrap">';
+        html += '<div class="trend-title">Daily composition (TP / FN / FP)</div>';
+        html += '<svg viewBox="0 0 '+W+' '+H+'" class="trend-svg">'+svg+'</svg>';
+        html += '</div>';
+        return html;
+    }
+
     function render() {
         const rows = applyFilters();
         const m = compute(rows);
@@ -250,25 +601,22 @@
             html += '<div class="filter-row"><div class="filter-field"><label class="filter-label">Store</label><select id="fStore"><option value="">All stores</option>'
                   + stores.map(x => '<option value="'+x.replace(/"/g,'&quot;')+'"'+(F.store===x?' selected':'')+'>'+x+'</option>').join('') + '</select></div></div>';
         }
+        html += '<button class="clear-filters" onclick="clearFilters()">Clear filters</button>';
         html += '</div>';
 
-        // Headline counts
-        const totalRecs = m.tp + m.fn + m.fp;
-        const share = (n) => totalRecs > 0 ? ((n / totalRecs) * 100).toFixed(1) + '%' : '—';
-        html += '<div class="section-label">Headline counts</div>';
-        html += '<div class="count-grid">';
-        html += '<div class="count-card total"><div class="count-num">'+m.recallSlots+'</div><div class="count-label">Recall slots (TP + FN)</div></div>';
-        html += '<div class="count-card tp"><div class="count-num">'+m.tp+'</div><div class="count-label">True Positives</div><div class="count-pct">'+share(m.tp)+' of records</div></div>';
-        html += '<div class="count-card fn"><div class="count-num">'+m.fn+'</div><div class="count-label">False Negatives</div><div class="count-pct">'+share(m.fn)+' of records</div></div>';
-        html += '<div class="count-card fp"><div class="count-num">'+m.fp+'</div><div class="count-label">False Positives</div><div class="count-pct">'+share(m.fp)+' of records</div></div>';
+        // ===== Three-view toggle: Precision / Recall / Matrix =====
+        html += '<div class="view-toggle">';
+        ['precision','recall','matrix'].forEach(v => {
+            const label = v.charAt(0).toUpperCase() + v.slice(1);
+            html += '<button class="vt-btn'+(VIEW===v?' active':'')+'" onclick="setView(\''+v+'\')">'+label+'</button>';
+        });
         html += '</div>';
 
-        // Recall + Precision
-        html += '<div class="metric-grid">';
-        html += '<div class="metric-card"><div class="metric-title">Recall (model)</div><div class="metric-big">'+fmtPct(m.recallModel)+'</div><div class="metric-sub">TP / (TP + Model FN)</div><div class="metric-raw">Raw: '+fmtPct(m.recallRaw)+'</div></div>';
-        html += '<div class="metric-card"><div class="metric-title">Precision (model)</div><div class="metric-big">'+fmtPct(m.precisionModel)+'</div><div class="metric-sub">TP / (TP + Model FP)</div><div class="metric-raw">Raw: '+fmtPct(m.precisionRaw)+'</div></div>';
-        html += '</div>';
-        html += '<div class="note-line">Headline figures exclude operational issues (Captana methodology). "Raw" includes everything, for reference only.</div>';
+        if (VIEW === 'matrix') {
+            html += renderMatrix(m, rows);
+        } else {
+            html += renderWheel(rows, m, VIEW);
+        }
 
         // By category
         const cats = byCategory(rows);
