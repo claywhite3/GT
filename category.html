@@ -26,6 +26,12 @@
         .hero-title { font-size: 26px; font-weight: 800; color: #111827; line-height: 1.15; }
         .hero-sub { font-size: 14px; color: #6B7280; font-weight: 500; margin-top: 6px; line-height: 1.5; }
 
+        .field-label { font-size: 12px; font-weight: 800; color: #6B7280; text-transform: uppercase; letter-spacing: .5px; margin: 4px 4px 10px; }
+        .interval-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+        .interval-card { background: #fff; border: 1.5px solid #DBE4FF; border-radius: 14px; padding: 16px 8px; cursor: pointer; box-shadow: 0 3px 10px rgba(17,24,39,0.10); transition: transform .12s, border-color .16s, box-shadow .16s; text-align: center; font-size: 16px; font-weight: 700; color: #111827; }
+        .interval-card:active { transform: scale(.96); }
+        .interval-card.selected { border-color: #2563EB; border-width: 2px; box-shadow: 0 5px 16px rgba(37,99,235,0.22); color: #2563EB; }
+
         .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .cat-card { display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid #DBE4FF; border-radius: 16px; padding: 18px 16px; cursor: pointer; box-shadow: 0 3px 10px rgba(17,24,39,0.10); transition: transform .12s, border-color .16s, box-shadow .16s; animation: fadeUp .35s ease both; text-align: left; min-height: 64px; }
         .cat-card:active { transform: scale(.97); }
@@ -51,11 +57,15 @@
     </div>
 
     <div class="hero">
-        <div class="eyebrow">Step 1 — Category</div>
-        <div class="hero-title">Select a Category</div>
-        <div class="hero-sub">Pick the product category you're auditing. It applies to every scan until you change it.</div>
+        <div class="eyebrow">Step 1 — Session Setup</div>
+        <div class="hero-title">Set Up This Session</div>
+        <div class="hero-sub">Pick the deployment interval and product category. Both apply to every scan until you change them.</div>
     </div>
 
+    <div class="field-label">Deployment Interval</div>
+    <div class="interval-row" id="intervalRow"></div>
+
+    <div class="field-label">Product Category</div>
     <div class="cat-grid" id="catGrid"></div>
 </div>
 
@@ -72,25 +82,34 @@
     try { document.getElementById('avatarEl').textContent = Session.initials(); } catch (e) {}
 
     let selected = Session.get('category') || null;
+    let interval = Session.get('deploymentInterval') || null;
 
     function render() {
+        const ir = document.getElementById('intervalRow');
+        ir.innerHTML = DEPLOYMENT_INTERVALS.map(iv =>
+            `<button class="interval-card${interval === iv ? ' selected' : ''}" onclick="pickInterval('${iv}')">${iv}</button>`
+        ).join('');
+
         const grid = document.getElementById('catGrid');
         grid.innerHTML = PRODUCT_CATEGORIES.map(cat =>
             `<button class="cat-card${selected === cat ? ' selected' : ''}" onclick="pick('${cat.replace(/'/g, "\\'")}')">
                 <span class="cat-name">${cat}</span>
             </button>`
         ).join('');
-        if (selected) document.getElementById('continueBtn').classList.remove('disabled');
+
+        // Require BOTH selections before enabling Continue.
+        const btn = document.getElementById('continueBtn');
+        if (selected && interval) btn.classList.remove('disabled');
+        else btn.classList.add('disabled');
     }
 
-    function pick(cat) {
-        selected = cat;
-        render();
-    }
+    function pick(cat) { selected = cat; render(); }
+    function pickInterval(iv) { interval = iv; render(); }
 
     function proceed() {
-        if (!selected) return;
+        if (!selected || !interval) return;
         Session.set('category', selected);
+        Session.set('deploymentInterval', interval);
         window.location.href = 'scan_camera.html';
     }
 

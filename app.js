@@ -67,6 +67,10 @@ const PRODUCT_CATEGORIES = [
   'Other',
 ];
 
+/* ---- DEPLOYMENT INTERVAL ----------------------------------------------- */
+// Experiment variable: compare camera spacing against detection performance.
+const DEPLOYMENT_INTERVALS = ['Default', '4ft', '8ft'];
+
 /* ---- ROOT CAUSES (False Negative reasons) ------------------------------ */
 // Each reason is tagged Model or Operational. That tag drives the analytics:
 // headline recall/precision EXCLUDE operational issues (Captana methodology).
@@ -150,6 +154,7 @@ const Records = {
       storeType: Session.get('storeTypeName'),
       storeAddress: (Session.get('storeName') + ' \u2014 ' + Session.get('storeAddr')).trim(),
       category: Session.get('category') || '',
+      deploymentInterval: Session.get('deploymentInterval') || '',
       cameraBarcode: Session.get('cameraBarcode'),
       outOfShelfBarcode: outOfShelfBarcode || '',
       classification: classification || '',

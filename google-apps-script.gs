@@ -1,6 +1,12 @@
+/* =========================================================================
+   Captana Ground Truth — Apps Script backend
+   IMPORTANT: This script must be BOUND to the Captana Ground Truth spreadsheet.
+   Open that spreadsheet → Extensions → Apps Script, and paste this there.
+   ========================================================================= */
+
 var SHEET_NAME = 'GroundTruth';
 var HEADERS = [
-  'Timestamp', 'Email', 'Store Type', 'Store Address', 'Category',
+  'Timestamp', 'Email', 'Store Type', 'Store Address', 'Category', 'Deployment Interval',
   'Camera Barcode', 'Out-of-Shelf Barcode', 'Classification',
   'Root Cause / FP Note', 'Reason Type', 'Record ID'
 ];
@@ -16,12 +22,13 @@ function getSheet() {
   return sheet;
 }
 
+// Writes headers ONLY if the sheet is empty.
 function setupHeaders() {
   getSheet();
 }
 
-// Force-rewrite the header row even if the sheet already has data. Run once
-// after updating columns. Safe to run anytime; only touches row 1.
+// Force-rewrites row 1 with the current HEADERS, even if the sheet has data.
+// Run this once after changing columns. Safe to run anytime.
 function fixHeaders() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
@@ -29,13 +36,24 @@ function fixHeaders() {
   sheet.setFrozenRows(1);
 }
 
+// Diagnostic: returns which spreadsheet this script is bound to + row count.
+// Open the /exec URL with ?diag=1 to see it.
+function diagInfo() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  return {
+    spreadsheetName: ss.getName(),
+    spreadsheetUrl: ss.getUrl(),
+    hasGroundTruthTab: !!sheet,
+    dataRows: sheet ? Math.max(0, sheet.getLastRow() - 1) : 0
+  };
+}
+
 function doPost(e) {
-  // Lock so two near-simultaneous requests can't both append the same id.
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(5000);
   } catch (lockErr) {
-    // Couldn't get the lock in time; bail rather than risk a dup.
     return ContentService
       .createTextOutput(JSON.stringify({ ok: false, error: 'busy' }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -45,7 +63,6 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var sheet = getSheet();
 
-    // De-dupe: if this record id already exists in the ID column, skip it.
     var id = data.id || '';
     if (id) {
       var idCol = HEADERS.length; // last column = Record ID
@@ -68,6 +85,7 @@ function doPost(e) {
       data.storeType || '',
       data.storeAddress || '',
       data.category || '',
+      data.deploymentInterval || '',
       data.cameraBarcode || '',
       data.outOfShelfBarcode || '',
       data.classification || '',
@@ -88,8 +106,13 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  // Return all rows as JSON so the app's View Data screen can read them.
+  // ?diag=1 -> report which spreadsheet this is bound to (helps debugging).
   try {
+    if (e && e.parameter && e.parameter.diag) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: true, diag: diagInfo() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet || sheet.getLastRow() < 2) {
@@ -98,18 +121,17 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
     var values = sheet.getDataRange().getValues();
-    var head = values[0];
     var rows = [];
     for (var i = 1; i < values.length; i++) {
       var r = values[i];
-      // skip fully-empty rows
       var empty = true;
       for (var c = 0; c < r.length; c++) { if (r[c] !== '' && r[c] !== null) { empty = false; break; } }
       if (empty) continue;
       rows.push({
         timestamp: r[0], email: r[1], storeType: r[2], storeAddress: r[3],
-        category: r[4], cameraBarcode: r[5], outOfShelfBarcode: r[6],
-        classification: r[7], rootCause: r[8], reasonType: r[9], id: r[10]
+        category: r[4], deploymentInterval: r[5], cameraBarcode: r[6],
+        outOfShelfBarcode: r[7], classification: r[8], rootCause: r[9],
+        reasonType: r[10], id: r[11]
       });
     }
     return ContentService

@@ -117,7 +117,7 @@
     try { document.getElementById('avatarEl').textContent = Session.initials(); } catch (e) {}
 
     let ALL = [];   // all records
-    const F = { from: '', to: '', store: '', category: '', classification: '' };
+    const F = { from: '', to: '', store: '', category: '', classification: '', interval: '' };
 
     function pct(n, d) { return d > 0 ? (n / d) : null; }
     function fmtPct(v) { return v === null ? '—' : (v * 100).toFixed(1) + '%'; }
@@ -138,6 +138,7 @@
         return ALL.filter(r => {
             if (F.store && r.storeAddress !== F.store) return false;
             if (F.category && r.category !== F.category) return false;
+            if (F.interval && r.deploymentInterval !== F.interval) return false;
             if (F.classification && r.classification !== F.classification) return false;
             if (F.from || F.to) {
                 const d = toDate(r.timestamp);
@@ -241,6 +242,10 @@
         html += '<div class="filter-field"><label class="filter-label">Result</label><select id="fCls"><option value="">All</option>'
               + ['True Positive','False Negative','False Positive'].map(x => '<option value="'+x+'"'+(F.classification===x?' selected':'')+'>'+x+'</option>').join('') + '</select></div>';
         html += '</div>';
+        html += '<div class="filter-row">';
+        html += '<div class="filter-field"><label class="filter-label">Interval</label><select id="fInt"><option value="">All intervals</option>'
+              + DEPLOYMENT_INTERVALS.map(x => '<option value="'+x+'"'+(F.interval===x?' selected':'')+'>'+x+'</option>').join('') + '</select></div>';
+        html += '</div>';
         if (stores.length > 1) {
             html += '<div class="filter-row"><div class="filter-field"><label class="filter-label">Store</label><select id="fStore"><option value="">All stores</option>'
                   + stores.map(x => '<option value="'+x.replace(/"/g,'&quot;')+'"'+(F.store===x?' selected':'')+'>'+x+'</option>').join('') + '</select></div></div>';
@@ -280,6 +285,24 @@
                       + '<span class="tpct'+(rec===null?' muted':'')+'">'+fmtPct(rec)+'</span><span class="tpct'+(prec===null?' muted':'')+'">'+fmtPct(prec)+'</span></div>';
             });
             html += '</div>';
+        }
+
+        // By deployment interval — the experiment comparison
+        const ivs = byInterval(rows);
+        const ivNames = DEPLOYMENT_INTERVALS.filter(iv => ivs[iv] && (ivs[iv].tp || ivs[iv].fn || ivs[iv].fp));
+        if (ivNames.length) {
+            html += '<div class="section-label">Recall &amp; precision by deployment interval (model)</div>';
+            html += '<div class="table-card">';
+            html += '<div class="trow head"><span class="tname">Interval</span><span class="tnum">TP</span><span class="tnum">FN</span><span class="tpct">Rec</span><span class="tpct">Prec</span></div>';
+            ivNames.forEach(iv => {
+                const d = ivs[iv];
+                const rec = pct(d.tp, d.tp + d.fnModel);
+                const prec = pct(d.tp, d.tp + d.fpModel);
+                html += '<div class="trow"><span class="tname">'+iv+'</span><span class="tnum">'+d.tp+'</span><span class="tnum">'+d.fnModel+'</span>'
+                      + '<span class="tpct'+(rec===null?' muted':'')+'">'+fmtPct(rec)+'</span><span class="tpct'+(prec===null?' muted':'')+'">'+fmtPct(prec)+'</span></div>';
+            });
+            html += '</div>';
+            html += '<div class="note-line">Compare intervals once each has enough data. Higher recall &amp; precision = better spacing.</div>';
         }
 
         // FN reasons + split
@@ -330,7 +353,21 @@
             if (el) el.addEventListener('change', () => { F[key] = el.value; render(); });
         };
         bind('fFrom','from'); bind('fTo','to'); bind('fCat','category');
+        bind('fInt','interval');
         bind('fCls','classification'); bind('fStore','store');
+    }
+
+    function byInterval(rows) {
+        const out = {};
+        DEPLOYMENT_INTERVALS.forEach(iv => out[iv] = { tp:0, fnModel:0, fpModel:0, fn:0, fp:0 });
+        rows.forEach(r => {
+            const iv = r.deploymentInterval;
+            if (!iv || !out[iv]) return;
+            if (r.classification === 'True Positive') out[iv].tp++;
+            else if (r.classification === 'False Negative') { out[iv].fn++; if (isModel(r)) out[iv].fnModel++; }
+            else if (r.classification === 'False Positive') { out[iv].fp++; if (isModel(r)) out[iv].fpModel++; }
+        });
+        return out;
     }
 
     async function reload() {
