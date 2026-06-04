@@ -134,6 +134,16 @@
         return isNaN(d) ? null : d;
     }
 
+    // Return YYYY-MM-DD for a record's timestamp, in local terms, for safe
+    // calendar-date comparison against the date inputs (which are YYYY-MM-DD).
+    function ymd(d) {
+        if (!d) return null;
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+    }
+
     function applyFilters() {
         return ALL.filter(r => {
             if (F.store && r.storeAddress !== F.store) return false;
@@ -143,8 +153,9 @@
             if (F.from || F.to) {
                 const d = toDate(r.timestamp);
                 if (!d) return false;
-                if (F.from && d < new Date(F.from)) return false;
-                if (F.to) { const t = new Date(F.to); t.setHours(23,59,59); if (d > t) return false; }
+                const rec = ymd(d);                 // record's calendar date
+                if (F.from && rec < F.from) return false;
+                if (F.to && rec > F.to) return false;
             }
             return true;
         });
