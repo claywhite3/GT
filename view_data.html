@@ -54,6 +54,16 @@
         .vt-btn:active { transform: scale(.97); }
         .vt-btn.active { background: #2563EB; color: #fff; }
 
+        /* Drill-down section break + tag picker (controls everything below it) */
+        .drill-break { height: 1px; background: linear-gradient(90deg, transparent, #D8DBE3 18%, #D8DBE3 82%, transparent); margin: 26px 0 0; }
+        .drill-control { background: #fff; border-radius: 14px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); margin: 16px 0 4px; border: 1px solid #EDEFF3; }
+        .drill-control-label { font-size: 10px; font-weight: 800; color: #9CA3AF; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 9px; display: flex; align-items: center; gap: 6px; }
+        .drill-control-label::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #2563EB; flex-shrink: 0; }
+        .tag-toggle { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .tg-btn { padding: 9px 6px; border-radius: 10px; border: 1.5px solid #E5E7EB; background: #F9FAFB; color: #6B7280; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+        .tg-btn:active { transform: scale(.97); }
+        .tg-btn.active { background: #EFF3FF; color: #2563EB; border-color: #2563EB; }
+
         /* Wheel */
         .wheel-wrap { background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 2px 8px rgba(17,24,39,0.05); }
         .wheel-svg { width: 220px; height: 220px; display: block; margin: 0 auto 8px; }
@@ -174,6 +184,7 @@
     let ALL = [];   // all records
     const F = { from: '', to: '', store: '', category: '', classification: '', interval: '' };
     let VIEW = 'recall';   // 'precision' | 'recall' | 'matrix'
+    let TAG = 'combined';  // drill-down picker: 'combined' | 'model' | 'operational'
     // Which trend lines are visible, per view. 'score' is the overall line.
     const TREND_ON = { recall: { score: true }, precision: { score: true } };
     // Which confusion bands are shown in the matrix stacked-area chart.
@@ -185,6 +196,7 @@
         render();
     }
     function setView(v) { VIEW = v; render(); }
+    function setTag(t) { TAG = t; render(); }
     function clearFilters() {
         F.from = ''; F.to = ''; F.store = ''; F.category = ''; F.classification = ''; F.interval = '';
         render();
@@ -272,12 +284,24 @@
         const cats = {};
         rows.forEach(r => {
             const c = r.category || 'Other';
-            if (!cats[c]) cats[c] = { tp:0, fnModel:0, fpModel:0 };
+            if (!cats[c]) cats[c] = { tp:0, fnModel:0, fnOps:0, fpModel:0, fpOps:0 };
             if (r.classification === 'True Positive') cats[c].tp++;
-            else if (r.classification === 'False Negative' && isModel(r)) cats[c].fnModel++;
-            else if (r.classification === 'False Positive' && isModel(r)) cats[c].fpModel++;
+            else if (r.classification === 'False Negative') { if (isModel(r)) cats[c].fnModel++; else if (isOps(r)) cats[c].fnOps++; }
+            else if (r.classification === 'False Positive') { if (isModel(r)) cats[c].fpModel++; else if (isOps(r)) cats[c].fpOps++; }
         });
         return cats;
+    }
+    // Resolve FN / FP counts for a bucket row according to the active TAG picker.
+    // 'combined' = model + operational; 'model' / 'operational' = that tag only.
+    function fnFor(d) {
+        if (TAG === 'model') return d.fnModel;
+        if (TAG === 'operational') return d.fnOps;
+        return d.fnModel + d.fnOps;
+    }
+    function fpFor(d) {
+        if (TAG === 'model') return d.fpModel;
+        if (TAG === 'operational') return d.fpOps;
+        return d.fpModel + d.fpOps;
     }
 
     function reasonBreakdown(rows, defs, cls) {
@@ -608,52 +632,69 @@
             html += renderMatrix(m, rows);
         } else {
             html += renderWheel(rows, m, VIEW);
-        }
 
-        // By category
-        const cats = byCategory(rows);
-        const catNames = PRODUCT_CATEGORIES.filter(c => cats[c]);
-        if (catNames.length) {
-            html += '<div class="section-label">Recall &amp; precision by category (model)</div>';
-            html += '<div class="table-card">';
-            html += '<div class="trow head"><span class="tname">Category</span><span class="tnum">TP</span><span class="tnum">FN</span><span class="tpct">Rec</span><span class="tpct">Prec</span></div>';
-            catNames.forEach(cn => {
-                const d = cats[cn];
-                const rec = pct(d.tp, d.tp + d.fnModel);
-                const prec = pct(d.tp, d.tp + d.fpModel);
-                html += '<div class="trow"><span class="tname">'+cn+'</span><span class="tnum">'+d.tp+'</span><span class="tnum">'+d.fnModel+'</span>'
-                      + '<span class="tpct'+(rec===null?' muted':'')+'">'+fmtPct(rec)+'</span><span class="tpct'+(prec===null?' muted':'')+'">'+fmtPct(prec)+'</span></div>';
+            // ===== Drill-down (Recall/Precision tabs only) =====
+            const isRecall = (VIEW === 'recall');
+            const metricName = isRecall ? 'Recall' : 'Precision';
+            const errHead = isRecall ? 'FN' : 'FP';
+            const errFor = isRecall ? fnFor : fpFor;   // picks count per active TAG
+
+            // Aesthetic break + tag picker that controls everything below it.
+            html += '<div class="drill-break"></div>';
+            html += '<div class="drill-control">';
+            html += '<div class="drill-control-label">Breakdown source</div>';
+            html += '<div class="tag-toggle">';
+            [['combined','Combined'],['model','Model'],['operational','Operational']].forEach(([v,lbl]) => {
+                html += '<button class="tg-btn'+(TAG===v?' active':'')+'" onclick="setTag(\''+v+'\')">'+lbl+'</button>';
             });
-            html += '</div>';
+            html += '</div></div>';
+
+            // By category
+            const cats = byCategory(rows);
+            const catNames = PRODUCT_CATEGORIES.filter(c => cats[c]);
+            if (catNames.length) {
+                html += '<div class="section-label">'+metricName+' by category</div>';
+                html += '<div class="table-card">';
+                html += '<div class="trow head"><span class="tname">Category</span><span class="tnum">TP</span><span class="tnum">'+errHead+'</span><span class="tpct">'+(isRecall?'Rec':'Prec')+'</span></div>';
+                catNames.forEach(cn => {
+                    const d = cats[cn];
+                    const err = errFor(d);
+                    const val = pct(d.tp, d.tp + err);
+                    html += '<div class="trow"><span class="tname">'+cn+'</span><span class="tnum">'+d.tp+'</span><span class="tnum">'+err+'</span>'
+                          + '<span class="tpct'+(val===null?' muted':'')+'">'+fmtPct(val)+'</span></div>';
+                });
+                html += '</div>';
+            }
+
+            // By deployment interval — the experiment comparison
+            const ivs = byInterval(rows);
+            const ivNames = DEPLOYMENT_INTERVALS.filter(iv => ivs[iv] && (ivs[iv].tp || ivs[iv].fn || ivs[iv].fp));
+            if (ivNames.length) {
+                html += '<div class="section-label">'+metricName+' by deployment interval</div>';
+                html += '<div class="table-card">';
+                html += '<div class="trow head"><span class="tname">Interval</span><span class="tnum">TP</span><span class="tnum">'+errHead+'</span><span class="tpct">'+(isRecall?'Rec':'Prec')+'</span></div>';
+                ivNames.forEach(iv => {
+                    const d = ivs[iv];
+                    const err = errFor(d);
+                    const val = pct(d.tp, d.tp + err);
+                    html += '<div class="trow"><span class="tname">'+iv+'</span><span class="tnum">'+d.tp+'</span><span class="tnum">'+err+'</span>'
+                          + '<span class="tpct'+(val===null?' muted':'')+'">'+fmtPct(val)+'</span></div>';
+                });
+                html += '</div>';
+                html += '<div class="note-line">Compare intervals once each has enough data. Higher '+metricName.toLowerCase()+' = better spacing.</div>';
+            }
+
+            // Reason breakdown for THIS tab only (always shows everything, tagged).
+            if (isRecall) {
+                html += '<div class="section-label">False Negatives by reason</div>';
+                html += renderReasons(reasonBreakdown(rows, ROOT_CAUSE_DEFS, 'False Negative'), ROOT_CAUSE_DEFS, '#EA580C');
+                html += renderSplit(m.fnModel, m.fnOps);
+            } else {
+                html += '<div class="section-label">False Positives by reason</div>';
+                html += renderReasons(reasonBreakdown(rows, FP_REASON_DEFS, 'False Positive'), FP_REASON_DEFS, '#DB2777');
+                html += renderSplit(m.fpModel, m.fpOps);
+            }
         }
-
-        // By deployment interval — the experiment comparison
-        const ivs = byInterval(rows);
-        const ivNames = DEPLOYMENT_INTERVALS.filter(iv => ivs[iv] && (ivs[iv].tp || ivs[iv].fn || ivs[iv].fp));
-        if (ivNames.length) {
-            html += '<div class="section-label">Recall &amp; precision by deployment interval (model)</div>';
-            html += '<div class="table-card">';
-            html += '<div class="trow head"><span class="tname">Interval</span><span class="tnum">TP</span><span class="tnum">FN</span><span class="tpct">Rec</span><span class="tpct">Prec</span></div>';
-            ivNames.forEach(iv => {
-                const d = ivs[iv];
-                const rec = pct(d.tp, d.tp + d.fnModel);
-                const prec = pct(d.tp, d.tp + d.fpModel);
-                html += '<div class="trow"><span class="tname">'+iv+'</span><span class="tnum">'+d.tp+'</span><span class="tnum">'+d.fnModel+'</span>'
-                      + '<span class="tpct'+(rec===null?' muted':'')+'">'+fmtPct(rec)+'</span><span class="tpct'+(prec===null?' muted':'')+'">'+fmtPct(prec)+'</span></div>';
-            });
-            html += '</div>';
-            html += '<div class="note-line">Compare intervals once each has enough data. Higher recall &amp; precision = better spacing.</div>';
-        }
-
-        // FN reasons + split
-        html += '<div class="section-label">False Negatives by reason</div>';
-        html += renderReasons(reasonBreakdown(rows, ROOT_CAUSE_DEFS, 'False Negative'), ROOT_CAUSE_DEFS, '#EA580C');
-        html += renderSplit(m.fnModel, m.fnOps);
-
-        // FP reasons + split
-        html += '<div class="section-label">False Positives by reason</div>';
-        html += renderReasons(reasonBreakdown(rows, FP_REASON_DEFS, 'False Positive'), FP_REASON_DEFS, '#DB2777');
-        html += renderSplit(m.fpModel, m.fpOps);
 
         html += '<button class="refresh-btn" onclick="reload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh data</button>';
 
@@ -699,13 +740,13 @@
 
     function byInterval(rows) {
         const out = {};
-        DEPLOYMENT_INTERVALS.forEach(iv => out[iv] = { tp:0, fnModel:0, fpModel:0, fn:0, fp:0 });
+        DEPLOYMENT_INTERVALS.forEach(iv => out[iv] = { tp:0, fnModel:0, fnOps:0, fpModel:0, fpOps:0, fn:0, fp:0 });
         rows.forEach(r => {
             const iv = r.deploymentInterval;
             if (!iv || !out[iv]) return;
             if (r.classification === 'True Positive') out[iv].tp++;
-            else if (r.classification === 'False Negative') { out[iv].fn++; if (isModel(r)) out[iv].fnModel++; }
-            else if (r.classification === 'False Positive') { out[iv].fp++; if (isModel(r)) out[iv].fpModel++; }
+            else if (r.classification === 'False Negative') { out[iv].fn++; if (isModel(r)) out[iv].fnModel++; else if (isOps(r)) out[iv].fnOps++; }
+            else if (r.classification === 'False Positive') { out[iv].fp++; if (isModel(r)) out[iv].fpModel++; else if (isOps(r)) out[iv].fpOps++; }
         });
         return out;
     }
